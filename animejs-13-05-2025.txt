@@ -1,0 +1,2408 @@
+```llm.txt
+# Anime.js v4 API Documentation
+
+## Introduction & Setup
+
+### Import Methods
+
+#### ES Modules
+Import Anime.js methods using ES Modules syntax.
+```javascript
+import {
+  animate,
+  createTimeline,
+  createTimer,
+  // ...other methods
+} from 'animejs';
+```
+
+#### Global Object
+Define Anime.js globally using a script tag.
+`<script src="path/to/anime.iife.min.js"></script>`
+Access modules directly from the `anime` object:
+```javascript
+anime.animate();
+anime.createTimeline();
+anime.createTimer();
+// ...other methods
+```
+Or use object destructuring:
+```javascript
+const {
+  animate,
+  createTimeline,
+  createTimer,
+  // ...other methods
+} = anime;
+```
+
+### Using with Vanilla JS
+Import necessary modules and start animating.
+
+#### Example: Vanilla JS Integration
+Demonstrates basic usage of `animate`, `utils`, `createDraggable`, `createSpring`.
+```javascript
+import { animate, utils, createDraggable, createSpring } from 'animejs';
+
+const [ $logo ] = utils.$('.logo.js');
+const [ $button ] = utils.$('button');
+let rotations = 0;
+
+// Bounce animation loop
+animate('.logo.js', {
+  scale: [
+    { to: 1.25, ease: 'inOut(3)', duration: 200 },
+    { to: 1, ease: createSpring({ stiffness: 300 }) }
+  ],
+  loop: true,
+  loopDelay: 250,
+});
+
+// Make logo draggable
+createDraggable('.logo.js', {
+  container: [0, 0, 0, 0], // Defines draggable area boundaries
+  releaseEase: createSpring({ stiffness: 200 })
+});
+
+// Animate logo rotation on button click
+const rotateLogo = () => {
+  rotations++;
+  $button.innerText = `rotations: ${rotations}`;
+  animate($logo, {
+    rotate: rotations * 360,
+    ease: 'out(4)',
+    duration: 1500,
+  });
+};
+$button.addEventListener('click', rotateLogo);
+```
+Relevant HTML:
+```html
+<svg class="logo js" viewBox="0 0 630 630"><path fill="currentColor" d="M577,0 C606.271092,0 ... Z"/></svg>
+<button>rotations: 0</button>
+```
+
+---
+## Timer
+Schedules and controls timed function callbacks. Alternative to `setTimeout()` or `setInterval()`, keeping animations and callbacks synchronized.
+Timers are created using `createTimer()`.
+
+### `createTimer(parameters)`
+Creates a Timer instance.
+
+#### Parameters
+- **parameters** (opt) `Object`: Timer playback settings and Timer callbacks.
+
+#### Returns
+`Timer`: Timer instance.
+
+#### Example: Timer Creation
+```javascript
+import { createTimer, utils } from 'animejs';
+const [ $time, $count ] = utils.$('.value'); // Assuming HTML: <span class="value"></span><span class="value"></span>
+
+createTimer({
+  duration: 1000,
+  loop: true,
+  frameRate: 30,
+  onUpdate: self => $time.innerHTML = self.currentTime,
+  onLoop: self => $count.innerHTML = self._currentIteration // Use _currentIteration or currentIteration
+});
+```
+HTML: `<span class="value time-display">0</span> <span class="value loop-count">0</span>`
+
+### Timer Playback Settings
+Define timer timing and behavior. Specified in `createTimer()` parameters Object.
+```javascript
+createTimer({
+  duration: 1000,   // e.g., Playback Setting
+  frameRate: 30,    // e.g., Playback Setting
+  loop: true,       // e.g., Playback Setting
+  onBegin: () => {},// e.g., Callback
+  // ... other settings and callbacks
+});
+```
+
+#### delay
+Time (ms) before the timer starts.
+- Accepts: `Number` (>= 0).
+- Default: `0`.
+- Global Default: `engine.defaults.delay = 500;`
+- Code Example:
+  ```javascript
+  import { createTimer, utils } from 'animejs';
+  const [ $time ] = utils.$('.time'); // HTML: <span class="time">0</span>
+  createTimer({ delay: 2000, onUpdate: self => $time.innerHTML = self.currentTime });
+  ```
+  HTML: `<span class="time">0</span>`
+
+#### duration
+Duration (ms) of the timer. `0` completes instantly.
+- Accepts: `Number` (>= 0). Values > 1e12 clamped to 1e12 (~32 years).
+- Default: `Infinity`.
+- Code Example:
+  ```javascript
+  import { createTimer, utils } from 'animejs';
+  const [ $time ] = utils.$('.time'); // HTML: <span class="time">0</span>
+  createTimer({ duration: 2000, onUpdate: self => $time.innerHTML = self.currentTime });
+  ```
+  HTML: `<span class="time">0</span>`
+
+#### loop
+Defines how many times a timer repeats.
+- Accepts:
+  - `Number`: Number of loops [0, Infinity].
+  - `Infinity`, `true`, `-1`: Loop indefinitely.
+- Default: `0`.
+- Global Default: `engine.defaults.loop = true;`
+- Code Example:
+  ```javascript
+  import { createTimer, utils } from 'animejs';
+  const [ $loops ] = utils.$('.loops'); // HTML: <span class="loops">0</span>
+  let loops = 0;
+  createTimer({ loop: true, duration: 1000, onLoop: () => $loops.innerHTML = ++loops });
+  ```
+  HTML: `<span class="loops">0</span>`
+
+#### loopDelay
+Delay (ms) between loops.
+- Accepts: `Number` (>= 0).
+- Default: `0`.
+- Global Default: `engine.defaults.loopDelay = 500;`
+- Code Example:
+  ```javascript
+  import { createTimer, utils } from 'animejs';
+  const [ $loops ] = utils.$('.loops'); // HTML: <span class="loops">0</span>
+  let loops = 0;
+  createTimer({ loop: true, loopDelay: 750, duration: 250, onLoop: () => $loops.innerHTML = ++loops });
+  ```
+  HTML: `<span class="loops">0</span>`
+
+#### alternate
+If `true`, timer direction alternates on each iteration when `loop` is > 0.
+- Accepts: `Boolean`.
+- Default: `false`.
+- Global Default: `engine.defaults.alternate = true;`
+- Code Example:
+  ```javascript
+  import { createTimer, utils } from 'animejs'; // Corrected from original 'animate'
+  const [ $time ] = utils.$('.time'); // HTML: <span class="time">0</span>
+  createTimer({ loop: true, duration: 1000, alternate: true, onUpdate: self => $time.innerHTML = self.iterationCurrentTime });
+  ```
+  HTML: `<span class="time">0</span>`
+
+#### reversed
+Sets initial direction of the timer. `iterationTime` is reversed; `currentTime` always progresses 0 to duration.
+- Accepts: `Boolean` (`true`: first iteration runs in reverse).
+- Default: `false`.
+- Global Default: `engine.defaults.reversed = true;`
+- Code Example:
+  ```javascript
+  import { createTimer, utils } from 'animejs'; // Corrected from original 'animate'
+  const [ $iterationTime ] = utils.$('.iteration-time'); // HTML: <span class="iteration-time">0</span>
+  createTimer({ duration: 10000, reversed: true, onUpdate: self => $iterationTime.innerHTML = self.iterationCurrentTime });
+  ```
+  HTML: `<span class="iteration-time">0</span>`
+
+#### autoplay
+Defines play mode. No effect if timer added to a timeline (overridden to `false`).
+- Accepts:
+  - `Boolean`: `true` (plays automatically), `false` (manual play needed).
+  - `onScroll()`: Timer starts when scroll thresholds are met.
+- Default: `true`.
+- Global Default: `engine.defaults.autoplay = false;`
+- Code Example:
+  ```javascript
+  import { createTimer, utils } from 'animejs';
+  const [ $time ] = utils.$('.time'); // HTML: <span class="time">0</span>
+  const timer = createTimer({ autoplay: false, onUpdate: self => $time.innerHTML = self.currentTime });
+  document.querySelector('button.play').addEventListener('click', () => timer.play());
+  ```
+  HTML: `<span class="time">0</span><button class="play">Play</button>`
+
+#### frameRate
+Frames per second (fps) at which timer runs. Can be modified later: `timer.fps = 30`.
+- Accepts: `Number` (> 0). Capped by monitor refresh rate or browser.
+- Default: `120`.
+- Global Default: `engine.defaults.frameRate = 30;`
+- Code Example:
+  ```javascript
+  import { createTimer, utils } from 'animejs';
+  const [ $range ] = utils.$('input.range'); // HTML: <input class="range" type="range">
+  const [ $fpsDisplay ] = utils.$('.fps'); // HTML: <span class="fps">60</span>
+  const timer = createTimer({ frameRate: 60, onUpdate: () => {} /* Update logic */ });
+  $range.addEventListener('input', () => {
+    const newFps = +$range.value;
+    $fpsDisplay.innerHTML = newFps;
+    timer.fps = newFps;
+  });
+  ```
+  HTML: `<span class="fps value">60</span><input type="range" min=0 max=120 value=60 class="range" />`
+
+#### playbackRate
+Speed multiplier. `1.0` is normal speed. Can be modified later: `timer.speed = .5`.
+- Accepts: `Number` (>= 0). `0` means timer won't play.
+- Default: `1`.
+- Global Default: `engine.defaults.playbackRate = .75;`
+- Code Example:
+  ```javascript
+  import { createTimer, utils } from 'animejs';
+  const [ $range ] = utils.$('input.range'); // HTML: <input class="range" type="range">
+  const [ $speedDisplay ] = utils.$('.speed'); // HTML: <span class="speed">2.0</span>
+  const timer = createTimer({ playbackRate: 2, onUpdate: () => {} /* Update logic */ });
+  $range.addEventListener('input', () => {
+    const newSpeed = +$range.value;
+    $speedDisplay.innerHTML = utils.roundPad(newSpeed, 1);
+    utils.sync(() => timer.speed = newSpeed);
+  });
+  ```
+  HTML: `<span class="speed value">2.0</span><input type="range" min=0 max=10 value=2 step=.1 class="range" />`
+
+### Timer Callbacks
+Execute functions at specific points during timer playback. Specified in `createTimer()` parameters.
+```javascript
+createTimer({
+  // ...playback settings
+  onBegin: (timerInstance) => { /* logic */ },
+  onLoop: (timerInstance) => { /* logic */ },
+  // ...other callbacks
+});
+```
+
+#### onBegin
+Executes when timer starts.
+- Accepts: `Function` (first argument is timer instance).
+- Default: `noop` (no operation function).
+- Global Default: `engine.defaults.onBegin = self => console.log(self.id);`
+- Code Example:
+  ```javascript
+  import { createTimer, utils } from 'animejs';
+  const [ $status ] = utils.$('.status'); // HTML: <span class="status">false</span>
+  createTimer({ delay: 2000, duration: 2000, onBegin: () => $status.innerHTML = 'true' });
+  ```
+  HTML: `<span class="status value">false</span>`
+
+#### onComplete
+Executes when all timer iterations (defined by `loop`) have finished.
+- Accepts: `Function` (first argument is timer instance).
+- Default: `noop`.
+- Global Default: `engine.defaults.onComplete = self => console.log(self.id);`
+- Code Example:
+  ```javascript
+  import { createTimer, utils } from 'animejs';
+  const [ $status ] = utils.$('.status'); // HTML: <span class="status">false</span>
+  createTimer({ duration: 2000, onComplete: () => $status.innerHTML = 'true' });
+  ```
+  HTML: `<span class="status value">false</span>`
+
+#### onUpdate
+Executes on every frame of a running timer, at specified `frameRate`.
+- Accepts: `Function` (first argument is timer instance).
+- Default: `noop`.
+- Global Default: `engine.defaults.onUpdate = self => console.log(self.id);`
+- Code Example:
+  ```javascript
+  import { createTimer, utils } from 'animejs';
+  const [ $updates ] = utils.$('.updates'); // HTML: <span class="updates">0</span>
+  let updates = 0;
+  createTimer({ onUpdate: () => $updates.innerHTML = ++updates });
+  ```
+  HTML: `<span class="updates value">0</span>`
+
+#### onLoop
+Executes every time a timer iteration completes.
+- Accepts: `Function` (first argument is timer instance).
+- Default: `noop`.
+- Global Default: `engine.defaults.onLoop = self => console.log(self.id);`
+- Code Example:
+  ```javascript
+  import { createTimer, utils } from 'animejs';
+  const [ $loops ] = utils.$('.loops'); // HTML: <span class="loops">0</span>
+  let loops = 0;
+  createTimer({ loop: true, duration: 1000, onLoop: () => $loops.innerHTML = ++loops });
+  ```
+  HTML: `<span class="loops value">0</span>`
+
+#### onPause
+Executes when a running timer is paused.
+- Accepts: `Function` (first argument is timer instance).
+- Default: `noop`.
+- Global Default: `engine.defaults.onPause = self => console.log(self.id);`
+- Code Example:
+  ```javascript
+  import { createTimer, utils } from 'animejs';
+  const [ $paused ] = utils.$('.paused'); // HTML: <span class="paused">0</span>
+  let pausedCount = 0;
+  const timer = createTimer({ onPause: () => $paused.innerHTML = ++pausedCount });
+  document.querySelector('button.pause-btn').addEventListener('click', () => timer.pause());
+  ```
+  HTML: `<span class="paused value">0</span><button class="pause-btn">Pause</button>`
+
+#### then()
+Returns a `Promise` that resolves (and executes callback) when the timer completes all its iterations.
+- Inline: `createTimer({duration: 500}).then(callback);`
+- Async/await: `async function waitForTimer() { return createTimer({ duration: 250 }); } const t = await waitForTimer();`
+- Parameters:
+  - **callback** `Function`: First argument is timer instance.
+- Returns: `Promise`.
+- Code Example:
+  ```javascript
+  import { createTimer, utils } from 'animejs';
+  const [ $status ] = utils.$('.status'); // HTML: <span class="status">pending</span>
+  createTimer({ duration: 2000 }).then(() => $status.innerHTML = 'fulfilled');
+  ```
+  HTML: `<span class="status value">pending</span>`
+
+### Timer Methods
+Provide control over timing, behavior, and progression. Available on a Timer instance.
+`const timer = createTimer(parameters); timer.play();`
+
+#### play()
+Forces the timer to play forward.
+- Returns: `Timer` (the timer itself, chainable).
+- Code Example:
+  ```javascript
+  import { createTimer } from 'animejs';
+  const timer = createTimer({ autoplay: false });
+  document.querySelector('button.play-btn').addEventListener('click', () => timer.play());
+  ```
+  HTML: `<button class="play-btn">Play</button>`
+
+#### reverse() (V4)
+Forces the timer to play backward.
+- Returns: `Timer` (the timer itself, chainable).
+- Code Example:
+  ```javascript
+  import { createTimer } from 'animejs';
+  const timer = createTimer({ duration: 2000 });
+  document.querySelector('button.reverse-btn').addEventListener('click', () => timer.reverse());
+  ```
+  HTML: `<button class="reverse-btn">Reverse</button>`
+
+#### pause()
+Pauses a running timer.
+- Returns: `Timer` (the timer itself, chainable).
+- Code Example:
+  ```javascript
+  import { createTimer } from 'animejs';
+  const timer = createTimer();
+  document.querySelector('button.pause-btn').addEventListener('click', () => timer.pause());
+  ```
+  HTML: `<button class="pause-btn">Pause</button>`
+
+#### restart()
+Resets all properties and sets `currentTime` to `0`. If `autoplay` is `true`, plays automatically.
+- Returns: `Timer` (the timer itself, chainable).
+- Code Example:
+  ```javascript
+  import { createTimer } from 'animejs';
+  const timer = createTimer();
+  document.querySelector('button.restart-btn').addEventListener('click', () => timer.restart());
+  ```
+  HTML: `<button class="restart-btn">Restart</button>`
+
+#### alternate()
+Toggles playback direction while adjusting `currentTime` to reflect new time progress. Only `iterationTime` is actually reversed.
+- Returns: `Timer` (the timer itself, chainable).
+- Code Example:
+  ```javascript
+  import { createTimer } from 'animejs';
+  const timer = createTimer({ duration: 10000, loop: true });
+  document.querySelector('button.alternate-btn').addEventListener('click', () => timer.alternate());
+  ```
+  HTML: `<button class="alternate-btn">Alternate</button>`
+
+#### resume()
+Resumes playback of a paused timer in its current direction.
+- Returns: `Timer` (the timer itself, chainable).
+- Code Example:
+  ```javascript
+  import { createTimer } from 'animejs';
+  const timer = createTimer({ loop: true });
+  // Example: timer.pause(); // Pause it first to see resume in action
+  document.querySelector('button.resume-btn').addEventListener('click', () => timer.resume());
+  ```
+  HTML: `<button class="resume-btn">Resume</button>`
+
+#### complete()
+Completes timer instantly.
+- Returns: `Timer` (the timer itself, chainable).
+- Code Example:
+  ```javascript
+  import { createTimer } from 'animejs';
+  const timer = createTimer({ duration: 100000 });
+  document.querySelector('button.complete-btn').addEventListener('click', () => timer.complete());
+  ```
+  HTML: `<button class="complete-btn">Complete</button>`
+
+#### cancel()
+Pauses timer, removes it from engine's main loop, frees up memory.
+- Returns: `Timer` (the timer itself, chainable).
+- Code Example:
+  ```javascript
+  import { createTimer } from 'animejs';
+  const timer = createTimer();
+  document.querySelector('button.cancel-btn').addEventListener('click', () => timer.cancel());
+  ```
+  HTML: `<button class="cancel-btn">Cancel</button>`
+
+#### revert()
+Cancels timer, sets `currentTime` to `0`, reverts linked `onScroll()` instance if necessary. Use to completely stop and destroy a timer.
+- Returns: `Timer` (the timer itself, chainable).
+- Code Example:
+  ```javascript
+  import { createTimer, utils } from 'animejs';
+  const [ $time ] = utils.$('.time'); // HTML: <span class="time">0</span>
+  const timer = createTimer({ onUpdate: self => $time.innerHTML = self.currentTime });
+  document.querySelector('button.revert-btn').addEventListener('click', () => {
+    timer.revert();
+    $time.innerHTML = timer.currentTime; // Should be 0
+  });
+  ```
+  HTML: `<span class="time value">0</span><button class="revert-btn">Revert</button>`
+
+#### seek(time, muteCallbacks)
+Updates `currentTime` of the timer and advances it to a specific time.
+- Parameters:
+  - **time** `Number`: New `currentTime` (ms) of the timer.
+  - **muteCallbacks** (opt) `Boolean`: If `true`, prevent callbacks from being fired. Default: `false`.
+- Returns: `Timer` (the timer itself, chainable).
+- Code Example:
+  ```javascript
+  import { createTimer } from 'animejs';
+  const timer = createTimer({ duration: 2000, autoplay: false });
+  document.querySelector('input.seek-range').addEventListener('input', (e) => timer.seek(+e.target.value));
+  ```
+  HTML: `<input type="range" min=0 max=2000 value=0 class="seek-range" />`
+
+#### stretch(duration)
+Changes total duration of a timer. Total duration = iteration duration * total number of iterations.
+- Parameters:
+  - **duration** `Number`: New total duration (ms) of the timer.
+- Returns: `Timer` (the timer itself, chainable).
+- Code Example:
+  ```javascript
+  import { createTimer, utils } from 'animejs'; // Corrected from original 'animate'
+  const [ $range ] = utils.$('input.stretch-range'); // HTML: <input class="stretch-range" type="range">
+  const [ $durationDisplay ] = utils.$('.duration-val'); // HTML: <span class="duration-val">2000</span>
+  const timer = createTimer({ duration: 2000 });
+  $range.addEventListener('input', () => {
+    timer.stretch(+$range.value).restart();
+    $durationDisplay.innerHTML = timer.duration;
+  });
+  ```
+  HTML: `<span class="duration-val value">2000</span><input type="range" min=0 max=4000 value=2000 class="stretch-range" />`
+
+### Timer Properties
+Accessed on a Timer instance: `timer.progress`.
+- **id** `String | Number`: Gets and sets the ID of the timer.
+- **deltaTime** `Number`: Gets time (ms) elapsed between current and previous frame.
+- **currentTime** `Number`: Gets and sets global current time (ms) of the timer.
+- **iterationCurrentTime** `Number`: Gets and sets current iteration time (ms).
+- **progress** `Number`: Gets and sets overall progress of the timer (0 to 1).
+- **iterationProgress** `Number`: Gets and sets progress of current iteration (0 to 1).
+- **currentIteration** `Number`: Gets and sets current iteration count.
+- **speed** `Number`: Gets and sets `playbackRate` multiplier of the timer.
+- **fps** `Number`: Gets and sets `frameRate` of the timer.
+- **paused** `Boolean`: Gets and sets whether the timer is paused.
+- **began** `Boolean`: Gets and sets whether the timer has started.
+- **completed** `Boolean`: Gets and sets whether the timer has completed.
+- **reversed** `Boolean`: Gets and sets whether the timer is reversed.
+
+---
+## Animation
+Animates property values of targeted elements with various parameters, callbacks, and methods.
+Animations are created using `animate()`.
+`import { animate } from 'animejs'; const animation = animate(targets, parameters);`
+A lightweight (3KB) WAAPI-powered version `waapi.animate()` is available (10KB for JS version).
+`import { waapi } from 'animejs'; const animation = waapi.animate(targets, parameters);`
+JS-only features are marked `(JS)`. WAAPI-specific with `(WAAPI)`. Refer to Web Animations API Guide for WAAPI version details.
+
+### Example: Animation Creation
+```javascript
+import { animate } from 'animejs';
+animate('span', {
+  y: [ // Property keyframes
+    { to: '-2.75rem', ease: 'outExpo', duration: 600 },
+    { to: 0, ease: 'outBounce', duration: 800, delay: 100 }
+  ],
+  rotate: { from: '-1turn', delay: 0 }, // Property specific parameters
+  delay: (_, i) => i * 50, // Function based value for overall animation delay
+  ease: 'inOutCirc',      // Overall animation ease
+  loopDelay: 1000,
+  loop: true
+});
+```
+HTML: `<h2 class="text-xl"><span>H</span><span>E</span><span>L</span>...</h2>`
+
+### Targets
+Specify elements to which property value changes are applied. Defined in first argument of `animate()`.
+`animate('.square', { translateX: 100, duration: 400 });`
+
+#### CSS selector
+Targets one or multiple DOM Elements using a CSS selector.
+- Accepts: Any `String` accepted by `document.querySelectorAll()`.
+- Code Example:
+  ```javascript
+  import { animate } from 'animejs';
+  animate('.square', { x: '17rem' });
+  animate('#css-selector-id', { rotate: '1turn' });
+  ```
+  HTML: `<div class="square"></div><div id="css-selector-id" class="square"></div>`
+
+#### DOM Elements
+Targets one or multiple DOM Elements.
+- Accepts: `HTMLElement`, `SVGElement`, `SVGGeometryElement`, `NodeList`.
+- Code Example:
+  ```javascript
+  import { animate } from 'animejs';
+  const demoEl = document.querySelector('#selector-demo');
+  const squaresNodeList = demoEl.querySelectorAll('.square');
+  animate(demoEl, { scale: .75 });
+  animate(squaresNodeList, { x: '23rem' });
+  ```
+  HTML: `<div id="selector-demo"><div class="square"></div><div class="square"></div></div>`
+
+#### JavaScript Objects (JS)
+Targets one or multiple JavaScript Objects. Animates object properties.
+- Accepts: `Object`, `Instance of Class`.
+- Code Example:
+  ```javascript
+  import { animate, utils } from 'animejs';
+  const [ $log ] = utils.$('code'); // HTML: <code>{"x":0,"y":0}</code>
+  const vector2D = { x: 0, y: 0 };
+  animate(vector2D, {
+    x: 100, y: 150,
+    modifier: utils.round(0),
+    onUpdate: () => $log.textContent = JSON.stringify(vector2D),
+  });
+  ```
+  HTML: `<code>{"x":0,"y":0}</code>`
+
+#### Array of targets
+Targets multiple valid `Targets` simultaneously by grouping them in an `Array`. Any target types can be grouped.
+- Accepts: An `Array` of `Targets`.
+- Code Example:
+  ```javascript
+  import { animate, utils } from 'animejs';
+  const [ $log ] = utils.$('.demo code'); // HTML: <code>{"x":"0"}</code>
+  const vector2D = { x: 0 };
+  animate([vector2D, '.square'], { // Animates both the JS object and the DOM element
+    x: '17rem',
+    modifier: utils.roundPad(2), // For JS object property
+    onRender: () => $log.textContent = JSON.stringify(vector2D), // For JS object
+  });
+  ```
+  HTML: `<code>{"x":"0"}</code><div class="square"></div>`
+
+### Animatable Properties
+Define which properties of `Targets` can be animated. Defined in `parameters` Object of `animate()`.
+`animate('.square', { translateX: 100, scale: 2, opacity: .5 });`
+
+#### CSS Properties
+Standard CSS properties that can be animated.
+- Code Example:
+  ```javascript
+  import { animate } from 'animejs';
+  animate('.square', {
+    width: '200px', // Animate width
+    backgroundColor: '#FF0000', // Animate background color
+    opacity: .5, // Animate opacity
+  });
+  ```
+  HTML: `<div class="square" style="width:100px; background-color:blue; opacity:1;"></div>`
+
+#### CSS transforms
+CSS `transform` property animated by specifying individual properties.
+JS `animate()`: Does not parse transforms from CSS style declarations; set via inline styles or `utils.set()`.
+WAAPI `waapi.animate()`: Recommended for animating `transform` property directly. Individual transforms work in browsers supporting `CSS.registerProperty()`.
+- Valid Individual CSS Transforms:
+  - `translateX` (shorthand: `x`), `translateY` (`y`), `translateZ` (`z`) (default: `'0px'`, unit: `'px'`)
+  - `rotate`, `rotateX`, `rotateY`, `rotateZ` (default: `'0deg'`, unit: `'deg'`)
+  - `scale`, `scaleX`, `scaleY`, `scaleZ` (default: `'1'`)
+  - `skew`, `skewX`, `skewY` (default: `'0deg'`, unit: `'deg'`)
+  - `perspective` (default: `'0px'`, unit: `'px'`)
+- Code Example:
+  ```javascript
+  import { animate, waapi } from 'animejs';
+  // JS version for individual transforms
+  animate('.js-example .square', { x: '15rem', scale: 1.25, skew: -45, rotate: '1turn' });
+  // WAAPI version for direct transform string (recommended for this)
+  waapi.animate('.waapi-example .square', { transform: 'translateX(15rem) scale(1.25) skew(-45deg) rotate(1turn)' });
+  ```
+  HTML: `<div class="js-example"><div class="square"></div></div> <div class="waapi-example"><div class="square"></div></div>`
+
+#### CSS Variables (JS) (V4)
+CSS variables with numerical or color values animated by passing variable name as string. Enables animation of pseudo-element properties (`::after`, `::before`).
+WAAPI `waapi.animate()` needs `CSS.registerProperty()` for CSS variable animation.
+- Code Example:
+  ```javascript
+  import { animate, utils } from 'animejs';
+  utils.set('.square.css-vars', { '--radius': '4px', '--x': '0rem', borderRadius: 'var(--radius)', translateX: 'var(--x)' });
+  animate('.square.css-vars', { '--radius': '20px', '--x': '16.5rem' });
+  ```
+  HTML: `<div class="square css-vars" style="--radius: 4px; --x: 0rem; border-radius: var(--radius); transform: translateX(var(--x));"></div>`
+
+#### JavaScript Object properties (JS)
+Numerical and color JavaScript Object properties passed directly.
+- Code Example:
+  ```javascript
+  import { animate, utils } from 'animejs';
+  const myObject = { number: 1337, unit: '42%' };
+  const [ $log ] = utils.$('code.js-obj-log'); // HTML: <code class="js-obj-log">...</code>
+  animate(myObject, {
+    number: 50, unit: '100%',
+    modifier: utils.round(0),
+    onRender: () => $log.innerHTML = JSON.stringify(myObject),
+  });
+  ```
+  HTML: `<code class="js-obj-log">{"number":1337,"unit":"42%"}</code>`
+
+#### HTML Attributes (JS)
+Numerical and color HTML attributes passed directly.
+- Code Example:
+  ```javascript
+  import { animate, utils } from 'animejs';
+  animate('input[type="range"].html-attr-example', { value: 1000, alternate: true, loop: true, modifier: utils.round(0) });
+  ```
+  HTML: `<input type="range" class="html-attr-example" value="0" min="0" max="1000" />`
+
+#### SVG Attributes (JS)
+Numerical and color SVG attributes animated by passing directly. Check SVG utility methods for convenience.
+- Code Example:
+  ```javascript
+  import { animate } from 'animejs';
+  animate('svg circle.svg-attr-example', { r: 25, fill: '#00FF00', alternate: true, loop: true });
+  animate('svg polygon.svg-attr-example-poly', { points: '64 68, 8 100, 64 4', alternate:true, loop:true});
+  ```
+  HTML: `<svg><circle class="svg-attr-example" cx="50" cy="50" r="10" fill="#FF0000"/><polygon class="svg-attr-example-poly" points="64 128, 8 32, 119 32" fill="blue"/></svg>`
+
+### Tween Value Types
+Specify start and end values for animatable properties. Assigned to Animatable properties.
+`animate('.square', { x: '6rem', opacity: { from: .4 } });`
+
+#### Numerical value
+Numerical value of property. `Number` or `String` with at least one number. If no unit for properties expecting one (e.g., `width`), browser default (often `px`) used.
+`JS animate()` can inherit units: `animate(el, {width:'50%'}); animate(el, {width:75}); // Animates to 75%`.
+WAAPI `animate()` auto-defaults to `px` for: `x, y, z, perspective, top, right, bottom, left, width, height, margin, padding, borderWidth, borderRadius, fontSize`.
+- Accepts: `Number`, `String`.
+- Code Example:
+  ```javascript
+  import { waapi } from 'animejs'; // WAAPI example for unit defaulting
+  waapi.animate('.square.num-val-ex', { x: 240, width: 75, rotate: '.75turn' }); // -> 240px, 75px
+  ```
+  HTML: `<div class="square num-val-ex"></div>`
+
+#### Unit conversion value
+Converts and animates to a value with a different unit. `JS animate()` unit conversions can be tricky; `utils.set()` or WAAPI recommended for predictability.
+- Accepts: `String`.
+- Code Example:
+  ```javascript
+  import { animate } from 'animejs';
+  animate('.square.unit-conv-ex', { width: '25%', x: '15rem', rotate: '.75turn' }); // from 'px' to '%', 'px' to 'rem', 'deg' to 'turn'
+  ```
+  HTML: `<div class="square unit-conv-ex" style="width:48px; transform:translateX(0px) rotate(0deg);"></div>`
+
+#### Relative Value (JS for `animate`, WAAPI as part of value string)
+Adds (`+=`), subtracts (`-=`), or multiplies (`*=`) current target value.
+- Accepts:
+  - `'+=VALUE'` (e.g., `'+=45'`, `'+=45px'`)
+  - `'-=VALUE'` (e.g., `'-=45'`, `'-=45deg'`)
+  - `'*=VALUE'` (e.g., `'*=.5'`)
+- Code Example:
+  ```javascript
+  import { animate, utils } from 'animejs';
+  const [ $clock ] = utils.$('.clock.rel-val-ex'); // HTML: <div class="clock rel-val-ex"></div>
+  document.querySelector('button.add-rel').addEventListener('click', () => animate($clock, { rotate: '+=90' }));
+  ```
+  HTML: `<div class="clock rel-val-ex"></div><button class="add-rel">+90deg</button>`
+
+#### Color value
+Animatable color properties in various formats.
+- Accepts (Formats):
+  - HEX: `'#F44'`, `'#FF4444'`
+  - HEXA: `'#F443'`, `'#FF444433'`
+  - RGB: `'rgb(255, 68, 68)'`
+  - RGBA: `'rgba(255, 68, 68, .2)'`
+  - HSL: `'hsl(0, 100%, 63%)'`
+  - HSLA: `'hsla(0, 100%, 63%, .2)'`
+  - String name (WAAPI): `'red'`, `'aqua'`
+- Code Example:
+  ```javascript
+  import { animate } from 'animejs';
+  animate('.circle.hex-ex',  { background: '#FF4B4B' });
+  animate('.circle.rgb-ex',  { background: 'rgb(255, 168, 40)' });
+  ```
+  HTML: `<div class="circle hex-ex" style="background:blue;"></div> <div class="circle rgb-ex" style="background:green;"></div>`
+
+#### Color function value (WAAPI)
+CSS `color()` function animated with `waapi.animate()`.
+- Accepts: Any valid CSS color space syntax.
+- Code Example:
+  ```javascript
+  import { waapi } from 'animejs';
+  waapi.animate('.circle.color-fn-ex', { backgroundColor: 'color(display-p3 1 0.5 0)' });
+  ```
+  HTML: `<div class="circle color-fn-ex"></div>`
+
+#### CSS variable (WAAPI)
+`waapi.animate()` natively animates CSS variables using `var(--my-value)` syntax.
+`JS animate()`: Combine Function based value and `utils.get()`: `color: $target => utils.get($target, '--variable-name')`.
+- Accepts: CSS variable string `var(...)`.
+- Code Example:
+  ```javascript
+  import { waapi, animate, utils } from 'animejs';
+  // WAAPI
+  waapi.animate('.square.css-var-waapi-ex', { rotate: 'var(--rotation)', borderColor: ['var(--hex-orange)', 'var(--hex-red)'] });
+  // JS animate() helper
+  const cssVar = name => $el => utils.get($el, name);
+  animate('.square.css-var-js-ex', { scale: cssVar('--scale'), background: [cssVar('--hex-red'), cssVar('--hex-orange')] });
+  ```
+  HTML: `<style>:root { --rotation: 90deg; --hex-orange: orange; --hex-red: red; --scale: 1.5; }</style> <div class="square css-var-waapi-ex"></div> <div class="square css-var-js-ex"></div>`
+
+#### Function based value
+Sets different values for each target of a multi-target animation. Re-calculable via `animation.refresh()`.
+- Accepts: `Function(target, index, length)`
+  - **target**: Current animated target element.
+  - **index**: Index of current targeted element.
+  - **length**: Total number of animated targets.
+- Must return: `Tween value` or `Tween parameters`.
+- Code Example:
+  ```javascript
+  import { animate, utils } from 'animejs';
+  animate('.square.fn-based-ex', {
+    x: $el => $el.dataset.xPos + 'px', // Assumes HTML like <div data-x-pos="50">
+    y: (_, i) => (i * 25) + 'px',
+    scale: (_, i, l) => (l - i) * .2 + .2, // Smaller scale for later elements
+    duration: () => utils.random(1200, 1800),
+  });
+  ```
+  HTML: `<div class="square fn-based-ex" data-x-pos="50"></div> <div class="square fn-based-ex" data-x-pos="100"></div>`
+
+### Tween Parameters
+Configure values, timings, behaviors of animated properties. Specified globally or locally (for specific property using Object). Animatable properties inherit global, can be overridden locally.
+`animate('.square', { x: { to: 100, delay: 0, ease: 'inOut(4)' }, scale: 1, duration: 400 });`
+
+#### to
+Animates to specified value from current target value. Must be in local tween parameter Object.
+- Required: If no `from` property defined.
+- Accepts: Any valid `Tween value types`, or an `Array` of two Tween value keyframes `([fromValue, toValue])`.
+- Default: Current target value (if only `from` property defined).
+- Code Example:
+  ```javascript
+  import { animate } from 'animejs';
+  animate('.square.to-ex', { x: { to: '16rem', ease: 'outCubic' }, rotate: { to: '.75turn' } });
+  ```
+  HTML: `<div class="square to-ex"></div>`
+
+#### from (V4)
+Animates from specified value to current target value. Must be in local tween parameter Object.
+- Required: If no `to` property defined.
+- Accepts: Any valid `Tween value types`.
+- Default: Current target value (if only `to` property defined).
+- Code Example:
+  ```javascript
+  import { animate } from 'animejs';
+  animate('.square.from-ex', { opacity: { from: .5 }, translateX: { from: '16rem' } }); // Animates from 0.5 opacity to current (e.g. 1)
+  ```
+  HTML: `<div class="square from-ex" style="opacity:1; transform:translateX(0rem);"></div>`
+
+#### delay
+Defines delay (ms) at beginning of all animated properties (globally) or locally to specific property.
+- Accepts: `Number` (>= 0), `Function based value` returning `Number`.
+- Default: Animation `delay` value (default `0`).
+- Global Default: `engine.defaults.delay = 500;`
+- Code Example:
+  ```javascript
+  import { animate } from 'animejs';
+  animate('.square.delay-ex', { x: '17rem', rotate: { to:360, delay:1000 }, delay:500, loop:true }); // rotate delay 1000ms, x delay 500ms
+  ```
+  HTML: `<div class="square delay-ex"></div>`
+
+#### duration
+Defines duration (ms) of all animated properties (globally) or specific property (locally).
+- Accepts: `Number` (>= 0), `Function based value` returning `Number`. Duration > 1e12 clamped.
+- Default: Animation `duration` value (default `1000`).
+- Global Default: `engine.defaults.duration = 500;`
+- Code Example:
+  ```javascript
+  import { animate } from 'animejs';
+  animate('.square.duration-ex', { x: '17rem', rotate: { to:360, duration:1500 }, duration:3000, loop:true }); // rotate 1500ms, x 3000ms
+  ```
+  HTML: `<div class="square duration-ex"></div>`
+
+#### ease
+Defines easing function for all animated properties or a specific property. Controls rate of change.
+Anime.js built-in easings: Use by `String` name or function from `eases` object. `createSpring()` imported separately.
+- Accepts (Examples):
+  - `'linear'`, `'steps(10)'`, `'cubicBezier(.5,0,.5,1)'`, `'in(power)'`, `'out(power)'`, `'inOut(power)'`
+  - (JS only for specific named eases): `'inQuad'`, `'outExpo'`, `'inBack(overshoot)'`, `'outElastic(amp,period)'`
+  - Function: `eases.linear`, `eases.outExpo`, `createSpring({ mass:1, stiffness:100, damping:10, velocity:0 })`
+- Default: `'out(2)'`.
+- Global Default: `engine.defaults.ease = 'outElastic(1, .5)';`
+- Code Example:
+  ```javascript
+  import { animate, waapi, eases, createSpring } from 'animejs';
+  animate('.s1.ease-ex', { x: '17rem', ease: 'inQuad' });
+  animate('.s2.ease-ex', { x: '17rem', ease: eases.outQuad });
+  waapi.animate('.s3.ease-ex', { x: '17rem', rotate: {to:360, ease:'out(6)'}, ease: createSpring({ stiffness: 70 }) });
+  ```
+  HTML: `<div class="s1 ease-ex square"></div> <div class="s2 ease-ex square"></div> <div class="s3 ease-ex square"></div>`
+
+#### composition (JS) (V4)
+Defines behavior when another animation on same target/property plays simultaneously. Global or local.
+- Accepts:
+  - `'replace'`: Replace and cancel running animation. (Default if targets < 1000).
+  - `'none'`: Do not replace. Previous animation continues if longer. (Default if targets >= 1000, JS version, no mode defined). Can offer better performance.
+  - `'blend'`: Creates additive animation, blends values. Best for `translate`, `scale`, `rotation`. Not for keyframes or color values.
+  - `0` (shorthand for `'replace'`), `1` (`'none'`), `2` (`'blend'`).
+- Default: `'replace'` (targets < 1000) or `'none'` (targets >= 1000 if JS & no mode set).
+- Global Default: `engine.defaults.composition = 'blend';`
+- Code Example:
+  ```javascript
+  import { animate, utils } from 'animejs';
+  const $square = utils.$('.square.comp-ex')[0]; // HTML: <div class="square comp-ex"></div>
+  animate($square, { scale: [.5, 1], alternate: true, loop: true, duration: 750, composition: 'blend' });
+  $square.addEventListener('mouseenter', () => animate($square, { scale: 1.5, duration: 350, composition: 'blend' }));
+  $square.addEventListener('mouseleave', () => animate($square, { scale: 1.0, duration: 250, composition: 'blend' }));
+  ```
+  HTML: `<div class="square comp-ex"></div>`
+
+#### modifier (JS) (V4)
+`Function` that modifies or alters animated numerical value. Global or local. String part of value (e.g. unit) automatically added after modification. Most `Utilities` functions can be modifiers.
+- Accepts: `Function(currentAnimatedNumericalValue)`
+- Must return: `Number`.
+- Default: `null`.
+- Global Default: `engine.defaults.modifier = v => -v;`
+- Code Example:
+  ```javascript
+  import { animate, utils } from 'animejs';
+  animate('.s1.mod-ex', { x: '17rem', modifier: utils.round(0) }); // Round to 0 decimals
+  animate('.s2.mod-ex', { x: '85rem', modifier: v => v % 17 });
+  ```
+  HTML: `<div class="s1 mod-ex square"></div> <div class="s2 mod-ex square"></div>`
+
+### Keyframes
+Create a sequence of animations on the same animatable property.
+
+#### Tween values keyframes (V4)
+Sequences multiple `Tween value` specific to an Animatable property using an `Array`. Duration between each keyframe = total animation duration / (number of transitions). First keyframe defines `from` value.
+Quick `from` value setting: `animate(target, { x: [-100, 100] }); // Animates x from -100 to 100`
+- Accepts: `Array` of valid `Tween values`.
+- Code Example:
+  ```javascript
+  import { animate } from 'animejs';
+  animate('.square.tvk-ex', {
+    translateX: ['0rem', '17rem', '0rem', '17rem', '0rem'], // Multiple values
+    scale: [1, .5, 1, .5, 1],
+    duration: 3000,
+    ease: 'inOut',         // Easing applied between each keyframe if no local ease
+    playbackEase: 'outIn(5)', // Easing applied across all keyframes
+    loop: true,
+  });
+  ```
+  HTML: `<div class="square tvk-ex"></div>`
+
+#### Tween parameters keyframes (JS)
+Sequences multiple `Tween parameters` specific to an Animatable property. Allows fine control (ease, delay, duration, modifier per keyframe). Default duration of keyframe = total animation duration / total number of keyframes.
+- Accepts: `Array` of `Tween parameters` objects.
+- Code Example:
+  ```javascript
+  import { animate } from 'animejs';
+  animate('.square.tpk-ex', {
+    x: [
+      { to: '17rem', duration: 700, delay: 400 },
+      { to: 0, duration: 700, delay: 800 },
+    ],
+    scale: [ { to: .5, duration: 700 }, { to: 1, duration: 700, delay: 100 } ],
+    duration: 3000, // Total duration, can be overridden by keyframe durations
+    loop: true,
+  });
+  ```
+  HTML: `<div class="square tpk-ex"></div>`
+
+#### Duration based keyframes (JS)
+Sequences multiple `Animatable property` one after another. Fine control over each keyframe. Default keyframe duration = total animation duration / total number of keyframes.
+`keyframes: [ { y: 50, ease: 'out', duration: 400 }, { x: 75, scale: .5, duration: 800 } ]`
+- Accepts: `Array` of `Object` containing one `Animatable property` and `Tween parameters`.
+- Code Example:
+  ```javascript
+  import { animate } from 'animejs';
+  animate('.square.dbk-ex', {
+    keyframes: [
+      { y: '-2.5rem', ease: 'out', duration: 400 },
+      { x: '17rem', scale: .5, duration: 800 }, // duration here is 800ms
+      { y: '2.5rem' }, // duration will be 3000/5 = 600ms if 5 keyframes total
+      { x: 0, scale: 1, duration: 800 },
+      { y: 0, ease: 'in', duration: 400 }
+    ],
+    duration: 3000, // Total animation duration
+    loop: true,
+  });
+  ```
+  HTML: `<div class="square dbk-ex"></div>`
+
+#### Percentage based keyframes (JS) (V4)
+Sequences multiple `Animatable properties` with positions defined from percentage of animation total duration. Similar to CSS `@keyframes`. Optional `ease` per keyframe. First keyframe defines `from` value.
+`keyframes: { '25%': { x:100, y:50, ease:'out' }, '50%': { x:200, y:75 } }`
+- Accepts: `Object` where keys are `String` percentages (e.g. `'25%'`), values are `Object` with `Animatable properties` and optional `ease`.
+- Code Example:
+  ```javascript
+  import { animate } from 'animejs';
+  animate('.square.pbk-ex', {
+    keyframes: {
+      '0%'  : { x: '0rem', y: '0rem', ease: 'out' },
+      '37%' : { x: '17rem', y: '-2.5rem', scale: .5 },
+      '100%': { y: '0rem', x: '0rem', scale: 1, ease: 'in' }
+    },
+    duration: 3000,
+    loop: true,
+  });
+  ```
+  HTML: `<div class="square pbk-ex"></div>`
+
+### Animation Playback Settings
+Specify timings and behaviors of an animation. Defined directly in `animate()` parameters Object.
+`animate('.square', { translateX:100, duration:400, loop:3, alternate:true });`
+
+Properties: `delay`, `duration`, `loop (V4)`, `loopDelay (JS V4)`, `alternate (V4)`, `reversed (V4)`, `autoplay`, `frameRate (JS V4)`, `playbackRate (V4)`, `playbackEase (JS V4)`.
+These behave identically to their Timer counterparts, but apply to the animation and its tweens.
+(Refer to Timer Playback Settings for detailed descriptions and examples of each.)
+
+### Animation Callbacks
+Execute functions at specific points during animation playback. Specified in `animate()` parameters.
+`animate('.square', { translateX:100, onBegin:()=>{}, onComplete:()=>{} });`
+
+Properties: `onBegin (JS)`, `onComplete`, `onBeforeUpdate (JS V4)`, `onUpdate (JS)`, `onRender (JS V4)`, `onLoop (JS V4)`, `onPause (JS V4)`, `then() (V4)`.
+These behave identically to their Timer counterparts, but `self` in the callback refers to the animation instance.
+(Refer to Timer Callbacks for detailed descriptions and examples of each.)
+
+### Animation Methods
+Provide control over timing, behavior, progression. Available on Animation instance.
+`const animation = animate(target, parameters); animation.play();`
+
+Methods: `play()`, `reverse() (V4)`, `pause()`, `restart()`, `alternate() (V4)`, `resume() (V4)`, `complete() (V4)`, `cancel() (V4)`, `revert() (V4)`, `seek(time, muteCallbacks)`, `stretch(duration) (JS V4)`, `refresh() (JS V4)`.
+These behave identically to their Timer counterparts.
+(Refer to Timer Methods for detailed descriptions and examples of each.)
+
+### Animation Properties
+Accessed on Animation instance: `animation.targets`.
+- **id** (JS) `String | Number`: Gets/sets ID of the animation.
+- **targets** `Array`: Gets current animation targets.
+- **currentTime** `Number`: Gets/sets global current time (ms) of animation.
+- **iterationCurrentTime** (JS) `Number`: Gets/sets current iteration time (ms).
+- **deltaTime** (JS) `Number`: Gets time (ms) elapsed between current and previous frame.
+- **progress** `Number`: Gets/sets overall progress of animation (0 to 1).
+- **iterationProgress** (JS) `Number`: Gets/sets progress of current iteration (0 to 1).
+- **currentIteration** (JS) `Number`: Gets/sets current iteration count.
+- **duration** `Number`: Gets total duration (ms) of animation.
+- **speed** `Number`: Gets/sets speed multiplier (`playbackRate`) of animation.
+- **fps** (JS) `Number`: Gets/sets `frameRate` of animation.
+- **paused** `Boolean`: Gets/sets whether animation is paused.
+- **began** (JS) `Boolean`: Gets/sets whether animation has started.
+- **completed** `Boolean`: Gets/sets whether animation has completed.
+- **reversed** (JS) `Boolean`: Gets/sets whether animation is reversed.
+
+---
+## Timeline
+Synchronises animations, timers, and functions together.
+Created using `createTimeline()`.
+`import { createTimeline } from 'animejs'; const timeline = createTimeline(parameters);`
+
+### Example: Timeline Creation
+```javascript
+import { createTimeline } from 'animejs';
+const tl = createTimeline({ defaults: { duration: 750 } }); // Global defaults for children
+tl.label('startMarker') // Define a label at current time (0ms)
+  .add('.square', { x: '15rem' }, 500)        // Animation starts at 500ms
+  .add('.circle', { x: '15rem' }, 'startMarker') // Animation starts at 'startMarker'
+  .add('.triangle', { x: '15rem', rotate: '1turn' }, '<-=250'); // Starts 250ms before end of previous child
+```
+HTML: `<div class="square"></div><div class="circle"></div><div class="triangle"></div>`
+
+### Add Timers (V4)
+Timers can be added to a timeline using `add()` (creates new) or `sync()` (existing).
+
+#### Timer creation with `add()`
+`timeline.add(timerParameters, position);`
+- **timerParameters** `Object`: Timer playback settings and callbacks.
+- **position** (opt) `Time position`: Where to insert timer.
+- Returns: `Timeline` (self, chainable).
+
+#### Timer synchronisation with `sync()`
+`timeline.sync(timerInstance, position);`
+- **timerInstance** `Timer`: Existing Timer instance.
+- **position** (opt) `Time position`.
+- Returns: `Timeline`.
+
+#### Example: Add Timers to Timeline
+```javascript
+import { createTimeline, createTimer, utils } from 'animejs';
+const [ $timerDisp1, $timerDisp2 ] = utils.$('.timer-display'); // HTML: <span class="timer-display"></span>...
+const existingTimer = createTimer({ duration: 1500, onUpdate: self => $timerDisp1.innerHTML = self.currentTime });
+const tl = createTimeline()
+  .sync(existingTimer) // Sync existing timer
+  .add({ duration: 500, onUpdate: self => $timerDisp2.innerHTML = self.currentTime }, '+=100'); // Create new, 100ms after existingTimer ends
+```
+HTML: `<span class="timer-display">0</span> <span class="timer-display">0</span>`
+
+### Add Animations
+Animations can be added using `add()` (creates new) or `sync()` (existing).
+
+#### Animation creation with `add()`
+Allows tween value composition with timeline's existing children.
+`timeline.add(targets, animationParameters, position);`
+- **targets** `Targets`.
+- **animationParameters** `Object`: Animatable properties, tween params, settings, callbacks.
+- **position** (opt) `Time position`.
+- Returns: `Timeline`.
+
+#### Animation synchronisation with `sync()`
+Tween composition handled at animation creation time.
+`const animation = animate(target, { x: 100 }); timeline.sync(animation, position);`
+- **animation** `Animation`: Existing Animation instance.
+- **position** (opt) `Time position`.
+- Returns: `Timeline`.
+
+#### Example: Add Animations to Timeline
+```javascript
+import { createTimeline, animate } from 'animejs';
+const circleAnimation = animate('.circle', { x: '15rem' }); // Create animation
+const tl = createTimeline()
+  .sync(circleAnimation) // Sync existing animation
+  .add('.triangle', { x: '15rem', rotate: '1turn', duration: 500 }, '-=200'); // Create new, 200ms before circleAnimation ends
+```
+HTML: `<div class="circle"></div><div class="triangle"></div>`
+
+### Sync WAAPI Animations (V4)
+WAAPI animations synchronized using `sync()`.
+`timeline.sync(waapiAnimationInstance, position);`
+- **waapiAnimationInstance** `Animation` (WAAPI version).
+- **position** (opt) `Time position`.
+- Returns: `Timeline`.
+- Code Example:
+  ```javascript
+  import { createTimeline, waapi } from 'animejs';
+  const waapiAnim = waapi.animate('.circle', { x: '15rem' });
+  createTimeline().sync(waapiAnim, 350); // Sync at 350ms
+  ```
+  HTML: `<div class="circle"></div>`
+
+### Sync Timelines (V4)
+Timelines synchronized using `sync()`.
+`timelineA.sync(timelineB, position);`
+- **timelineB** `Timeline`: Existing Timeline instance.
+- **position** (opt) `Time position`.
+- Returns: `Timeline` (timelineA).
+- Code Example:
+  ```javascript
+  import { createTimeline } from 'animejs';
+  const tlA = createTimeline().add('.shape1', {x:10});
+  const tlB = createTimeline().add('.shape2', {y:10});
+  createTimeline().sync(tlA).sync(tlB, '<'); // tlB starts when tlA ends
+  ```
+  HTML: `<div class="shape1"></div><div class="shape2"></div>`
+
+### Call Functions (V4)
+Functions added using `call()`.
+`timeline.call(callbackFunction, position);`
+- **callbackFunction** `Function`.
+- **position** (opt) `Time position`.
+- Returns: `Timeline`.
+- Code Example:
+  ```javascript
+  import { createTimeline } from 'animejs';
+  createTimeline()
+    .call(() => console.log('Callback A at 0ms'), 0)
+    .call(() => console.log('Callback B at 800ms'), 800);
+  ```
+
+### Time Position
+Specifies insertion time of a child in timeline. Last parameter of `add()`, `sync()`, `call()`, `label()`. If undefined, child positioned at end.
+- Types:
+  - Absolute `Number`: `500` (at 500ms).
+  - Addition `String`: `'+=100'` (100ms after previous child ends).
+  - Subtraction `String`: `'-=100'` (100ms before previous child ends).
+  - Multiplier `String`: `'*=.5'` (at half duration of previous child, relative to its start).
+  - Previous end `String`: `'<'` (at end position of previous child).
+  - Previous start `String`: `'<<'` (at start position of previous child).
+  - Combined `String`: `'<<+=250'` (250ms after start of previous child).
+  - Label `String`: `'MyLabel'` (at position of 'MyLabel').
+  - Stagger `Function`: `stagger(10)` (stagger positions by 10ms for multi-target animations).
+- Code Example:
+  ```javascript
+  createTimeline()
+    .label('start', 0)
+    .add('.item1', { x: '10rem' }, 500) // Absolute
+    .add('.item2', { x: '10rem' }, 'start') // At label 'start'
+    .add('.item3', { x: '10rem' }, '<-=250'); // Relative to .item2 end
+  ```
+  HTML: `<div class="item1"></div><div class="item2"></div><div class="item3"></div>`
+
+### Timeline Playback Settings
+Specify timings and behaviors. Defined in `createTimeline()` parameters.
+`createTimeline({ defaults:{ease:'out(3)'}, loop:3, alternate:true });`
+
+#### defaults (V4)
+Defines default parameters for timeline children (animations, timers).
+- Accepts: `Object` of `Tween parameters` (except `from`/`to`), `Playback settings`, `Callbacks`.
+- Code Example:
+  ```javascript
+  createTimeline({ defaults: { ease: 'inOutExpo', duration: 500, loop: 1 } })
+    .add('.square', { x: '15rem' }) // Inherits duration 500, ease inOutExpo, loop 1
+    .add('.circle', { x: '15rem', duration: 1000 }); // Overrides duration to 1000
+  ```
+  HTML: `<div class="square"></div><div class="circle"></div>`
+
+Other playback settings (`delay`, `loop`, `loopDelay (V4)`, `alternate`, `reversed`, `autoplay`, `frameRate (V4)`, `playbackRate (V4)`, `playbackEase (V4)`) behave as their Timer/Animation counterparts, applying to the timeline as a whole.
+
+### Timeline Callbacks
+Execute functions at specific points. Defined in `createTimeline()` parameters.
+`createTimeline({ onBegin: ()=>{}, onComplete: ()=>{}, loop:true, onLoop:()=>{} });`
+
+Callbacks (`onBegin`, `onComplete`, `onBeforeUpdate`, `onUpdate`, `onRender (V4)`, `onLoop (V4)`, `onPause (V4)`, `then() (V4)`) behave as their Timer/Animation counterparts. `self` in callback refers to timeline instance.
+
+### Timeline Methods
+Control timing, behavior, progression. Available on Timeline instance.
+`const timeline = createTimeline(); timeline.play();`
+
+#### add() (V4)
+Creates and adds animations or timers. (See "Add Timers" and "Add Animations" under Timeline).
+
+#### set() (V4)
+Instantly sets targets' property values at specific timeline time.
+`timeline.set(targets, parameters, position);`
+- **targets** `Targets`.
+- **parameters** `Object` (Animatable properties).
+- **position** (opt) `Time position`.
+- Returns: `Timeline`.
+- Code Example: `tl.set('.shape', { opacity: 0, scale: 0.5 }, 1000); // At 1s, set opacity and scale.`
+
+#### sync() (V4)
+Synchronizes JS/WAAPI Animation, Timer, Timeline, or native WAAPI Animation. (See "Sync..." sections under Timeline).
+
+#### label() (V4)
+Associates time positions with label names. (See "Time Position" for usage).
+`timeline.label(labelName, position);`
+- **labelName** `String`.
+- **position** (opt) `Time position`.
+- Returns: `Timeline`.
+
+#### remove() (V4)
+Removes animations, timers, timelines, targets, or specific tween properties. Timeline pauses if all children removed. Does not affect timeline duration.
+- Remove objects: `timeline.remove([animation, timer, subTimeline]);`
+- Remove targets: `timeline.remove(targets);`
+- Remove target's properties: `timeline.remove(targets, propertyNameString);`
+- Returns: `Timeline`.
+
+#### call() (V4)
+Calls function callback at specified time position. (See "Call Functions" under Timeline).
+
+#### init() (V4)
+Initializes initial values of all timeline children. Normally, children initialize when playhead reaches them; `init()` forces immediate initial render.
+- Returns: `Timeline`.
+- Code Example: `createTimeline().add('.el', { opacity:{from:0} }).init(); // Opacity set to 0 immediately.`
+
+Other methods (`play()`, `reverse() (V4)`, `pause()`, `restart()`, `alternate() (V4)`, `resume() (V4)`, `complete() (V4)`, `cancel() (V4)`, `revert() (V4)`, `seek(time, muteCallbacks)`, `stretch(duration) (V4)`, `refresh() (V4)`) behave as their Timer/Animation counterparts, applying to the timeline.
+
+### Timeline Properties
+Accessed on Timeline instance: `timeline.duration`.
+- **id** `String | Number`: Gets/sets timeline ID.
+- **labels** `Object`: Gets/sets map of time position labels.
+- `currentTime`, `iterationCurrentTime`, `deltaTime`, `progress`, `iterationProgress`, `currentIteration`, `duration`, `speed`, `fps`, `paused`, `began`, `completed`, `reversed`: Same as Timer/Animation properties, applying to the timeline.
+
+---
+## Animatable (V4)
+Efficiently animates target properties, ideal for frequent value changes (e.g., cursor events, animation loops). Alternative to `animate()` and `utils.set()` for high-frequency updates.
+Created using `createAnimatable()`.
+`import { createAnimatable } from 'animejs'; const animatable = createAnimatable(targets, parameters);`
+Animatable property functions are used to get/set values:
+`animatable.propertyName(value, duration, ease); // Triggers animation`
+`animatable.propertyName(); // Returns current value`
+For performance, only `Number` or `Array<Number>` can be passed to an animatable property function as `value`.
+
+### Example: Animatable Creation
+```javascript
+import { createAnimatable, utils } from 'animejs';
+const animatableSquare = createAnimatable('.square', { // Define properties and their default animation settings
+  x: 500, // x animations will default to 500ms duration
+  y: { duration: 300, ease: 'linear' }, // y animations default to 300ms, linear ease
+  ease: 'out(3)', // Global default ease for other properties if not specified
+});
+// Example usage for mouse move:
+window.addEventListener('mousemove', e => {
+  const xPos = e.clientX - window.innerWidth / 2;
+  const yPos = e.clientY - window.innerHeight / 2;
+  animatableSquare.x(xPos); // Animates x to xPos over 500ms with 'out(3)' ease
+  animatableSquare.y(yPos); // Animates y to yPos over 300ms with 'linear' ease
+});
+```
+HTML: `<div class="square" style="position:fixed; top:50%; left:50%;"></div>`
+
+### Animatable Settings
+Specified globally or per-property in `createAnimatable()` parameters.
+`createAnimatable(targets, { x: { unit:'rem', duration:400 }, y:200, ease:'out(2)' });`
+
+#### unit
+Defines unit for animated property value.
+- Accepts: `String` (valid CSS unit, e.g., `'px'`, `'rem'`, `'deg'`).
+- Code Example:
+  ```javascript
+  const clock = createAnimatable('.clock-animatable', { rotate: { unit: 'rad' }, duration: 400 });
+  // In an event: clock.rotate(newAngleInRadians);
+  ```
+  HTML: `<div class="clock-animatable"></div>`
+
+#### duration
+Specifies duration (ms) for transition to animated property value. `0` sets value immediately.
+- Accepts: `Number` (>= 0), `Function based value` returning `Number`.
+- Default: `1000`.
+- Code Example:
+  ```javascript
+  import { createAnimatable, stagger } from 'animejs';
+  const circles = createAnimatable('.circle-animatable', {
+    x: 0, // x updates immediately
+    y: stagger(200, { from: 'center', start: 200 }), // y animations use staggered durations
+    ease: 'out(4)',
+  });
+  // In an event: circles.x(newXval).y(newYval);
+  ```
+  HTML: `<div class="circle-animatable"></div><div class="circle-animatable"></div>...`
+
+#### ease
+Determines easing function for transition. `out` type easing often preferred for responsiveness.
+- Accepts: `ease` (string name or function, e.g. `'linear'`, `eases.outElastic`, `createSpring()`).
+- Default: `'outQuad'`.
+- Code Example: `const anim = createAnimatable('.el', { x: { ease: 'outElastic' } });`
+
+#### modifier
+Defines a `Modifier function` to alter animated numerical value before application.
+- Accepts: `Modifier function` (e.g., `utils.snap(10)`).
+- Default: `noop`.
+- Code Example: `const anim = createAnimatable('.el', { rotate: { unit:'rad', modifier: utils.snap(Math.PI/4), duration:0 }});`
+
+### Animatable Methods
+Trigger animations attached to animatable properties. Available on Animatable instance.
+`const anim = createAnimatable(target, {x:500}); anim.x(100); anim.y(50, 200, 'outExpo');`
+
+#### Getters
+Properties defined in `createAnimatable()` parameters become methods. Calling without arguments acts as getter.
+- Returns: `Number` (single value) or `Array<Number>` (multiple values like RGB color).
+- Code Example:
+  ```javascript
+  import { createAnimatable, utils } from 'animejs';
+  const circle = createAnimatable('.circle-getter', { x:500, y:500 });
+  circle.animations.x.onRender = () => console.log(`Current X: ${circle.x()}`); // Log current x value
+  // In an event: circle.x(newX);
+  ```
+  HTML: `<div class="circle-getter"></div>`
+
+#### Setters
+Calling property methods with arguments acts as setter, triggering animation. Chainable.
+`animatable.property(value, duration, easing);`
+- **value** `Number | Array<Number>`: New value to animate to.
+- **duration** (opt) `Number`: Optional new transition duration (ms) for this call.
+- **easing** (opt) `ease`: Optional new easing function for this call.
+- Returns: `Animatable` (self, chainable). `animatable.x(100).y(200);`
+- Code Example:
+  ```javascript
+  const circle = createAnimatable('.circle-setter', { x:0, y:0, backgroundColor:[255,0,0] });
+  // In an event:
+  // circle.x(newX, 250, 'outExpo').y(newY).backgroundColor([newR,newG,newB], 100);
+  ```
+  HTML: `<div class="circle-setter"></div>`
+
+#### revert()
+Reverts all animatable properties to original values, cleans up CSS inline styles. Stops and destroys animatable.
+- Returns: `Animatable` (self, chainable).
+- Code Example:
+  ```javascript
+  const animCircles = createAnimatable('.c-revert', {x:100});
+  // Later: animCircles.revert();
+  ```
+
+### Animatable Properties
+Accessed on Animatable instance.
+- **targets** `Array`: Gets the animatable `Targets`.
+- **animations** `Object`: Gets all underlying animation instances for each animatable property.
+
+---
+## Draggable (V4)
+Adds draggable capabilities to DOM Elements.
+Created using `createDraggable()`.
+`import { createDraggable } from 'animejs'; const draggable = createDraggable(target, parameters);`
+
+### Example: Draggable Creation
+```javascript
+import { createDraggable } from 'animejs';
+createDraggable('.square.draggable-ex');
+```
+HTML: `<div class="square draggable-ex" style="width:50px; height:50px; background:blue; cursor:grab;"></div>`
+
+### Draggable Axes Parameters
+Specified globally or per-axis (`x`/`y` object) in `createDraggable()` parameters.
+`createDraggable('.sq', { x:{snap:100}, y:{snap:50}, modifier:utils.wrap(-200,0) });`
+
+#### x, y
+Defines behavior of x-axis or y-axis. Pass an object for parameters or `false` to disable.
+- Accepts: `Boolean`, `Draggable axes parameters Object` (containing `snap`, `modifier`, `mapTo`).
+- Default: `true`.
+- Code Example: `createDraggable('.sq', { x: true, y: { snap: 50, modifier: utils.clamp(0,100) } });`
+
+#### snap
+Rounds final value of an axis (or both if global) to nearest specified increment. If `Array` provided, selects closest value.
+- Accepts: `Number`, `Array<Number>`, `Function` returning these. Function value refreshed on resize/`refresh()`.
+- Default: `0`.
+- Code Example: `createDraggable('.sq', { container:'.grid', snap:56, x:{snap:[0,100,200]} });`
+
+#### modifier
+Defines a `Modifier function` to alter value of an axis (or both if global).
+- Accepts: `Modifier function` (e.g., `utils.wrap`, `utils.clamp`).
+- Default: `noop`.
+- Code Example: `createDraggable('.sq', { modifier:utils.wrap(-32,32), x:{modifier:utils.wrap(-128,128)} });`
+
+#### mapTo
+Maps axis value to a different property of the element (e.g., map x-drag to `rotateY`).
+- Accepts: `String` (property name).
+- Default: `null`.
+- Code Example: `createDraggable('.sq', { x:{mapTo:'rotateY'}, y:{mapTo:'scale'} });`
+
+### Draggable Settings
+Defined directly in `createDraggable()` parameters Object.
+
+#### trigger
+Specifies a different element than `target` to trigger drag.
+- Accepts: `CSS Selector`, `DOM Element`.
+- Code Example: `createDraggable('.draggable-content', { trigger:'.drag-handle' });`
+
+#### container
+Specifies container, preventing dragging outside its boundaries.
+- Accepts: `CSS Selector`, `HTMLElement`, `Array<Number>` (`[top, right, bottom, left]`), `Function` returning Array. Function value refreshed on resize/`refresh()`.
+- Default: `null` (no container).
+- Code Example: `createDraggable('.item', { container:'.bounds-box' });`
+
+#### containerPadding
+Specifies container's padding (px).
+- Accepts: `Number` (all sides), `Array<Number>` (`[top, right, bottom, left]`), `Function` returning Array. Function value refreshed on resize/`refresh()`.
+- Default: `0`.
+- Code Example: `createDraggable('.item', { container:'.bounds', containerPadding:[10,20,10,20] });`
+
+#### containerFriction
+Friction (0-1) applied when dragged element goes out of bounds. `0` = no friction, `1` = cannot go past bounds.
+- Accepts: `Number` (0-1), `Function` returning Number. Function value refreshed on resize/`refresh()`.
+- Default: `0.8`.
+
+#### releaseContainerFriction
+Overrides `containerFriction` for element when *thrown* out of bounds on release.
+- Accepts: `Number` (0-1), `Function` returning Number. Function value refreshed on resize/`refresh()`.
+- Default: The `containerFriction` value.
+
+#### releaseMass
+Mass (0-1000) applied to dragged element after release. Affects speed, movement distance, bounciness. Lower values = faster. (No effect if `releaseEase` is a spring; spring's mass used instead).
+- Default: `1`.
+
+#### releaseStiffness
+Stiffness (0-1000) applied after release. Lower values = slower. (No effect if `releaseEase` is spring).
+- Default: `80`.
+
+#### releaseDamping
+Damping (0-1000) applied after release. Lower values = more bounciness at container bounds. (No effect if `releaseEase` is spring).
+- Default: `10`.
+
+#### velocityMultiplier
+Multiplier for velocity applied after release. `0` = no velocity, `1` = normal, `2` = double.
+- Accepts: `Number` (>=0), `Function` returning Number. Function value refreshed on resize/`refresh()`.
+- Default: `1`.
+
+#### minVelocity, maxVelocity
+Minimum/Maximum velocity (px/s) applied after release.
+- Accepts: `Number` (>=0), `Function` returning Number. Function value refreshed on resize/`refresh()`.
+- Default (min): `0`.
+- Default (max): `50`.
+
+#### releaseEase
+Custom easing applied after release, on snap, or when repositioning from out of bounds. `createSpring()` overrides `releaseMass/Stiffness/Damping`. `velocity` parameter of `createSpring()` has no effect (actual velocity used).
+- Accepts: `ease` (string name or function).
+- Default: `eases.outQuint`.
+- Code Example: `createDraggable('.item', { releaseEase: createSpring({stiffness:150,damping:15}) });`
+
+#### dragSpeed
+Affects dragging speed. Higher = faster. `0` = no drag. Negative values invert movement.
+- Accepts: `Number`, `Function` returning Number. Function value refreshed on resize/`refresh()`.
+- Default: `1`.
+
+#### scrollThreshold
+Pixels draggable must cross beyond container bounds before container auto-scrolls.
+- Accepts: `Number`, `Function` returning Number. Function value refreshed on resize/`refresh()`.
+- Default: `20`.
+
+#### scrollSpeed
+Auto-scrolling speed of container. Higher = faster. `0` = no scroll.
+- Accepts: `Number`, `Function` returning Number. Function value refreshed on resize/`refresh()`.
+- Default: `1.5`.
+
+#### cursor
+Custom CSS cursor styles for hovered/grabbed states on fine pointer devices (`(pointer:fine)`).
+- Accepts: `Boolean` (`false` disables custom styling), `Object` (e.g. `{ onHover: 'grab', onGrab: 'grabbing' }`), `Function` returning these. Function value refreshed on resize/`refresh()`.
+- Default: `{ onHover: 'grab', onGrab: 'grabbing' }`.
+- Code Example: `createDraggable('.item', { cursor: {onHover:'move', onGrab:'wait'} });`
+
+### Draggable Callbacks
+Execute functions at specific points during dragging. Specified in `createDraggable()` parameters.
+
+#### onGrab
+Executes when element is grabbed.
+- Accepts: `Function` (first arg is draggable instance). Default: `noop`.
+- Code Example: `createDraggable('.item', { onGrab: self => console.log('Grabbed at x:', self.x) });`
+
+#### onDrag
+Executes when element is being dragged.
+- Accepts: `Function` (first arg is draggable instance). Default: `noop`.
+
+#### onUpdate
+Executes every time position of dragged element changes.
+- Accepts: `Function` (first arg is draggable instance). Default: `noop`.
+
+#### onRelease
+Executes when element is released after a grab.
+- Accepts: `Function` (first arg is draggable instance). Default: `noop`.
+
+#### onSnap
+Executes every time a snap occurs (if `snap` parameter is set) when element is dragged or released.
+- Accepts: `Function` (first arg is draggable instance). Default: `noop`.
+
+#### onSettle
+Executes when dragged target has completely stopped moving after being released.
+- Accepts: `Function` (first arg is draggable instance). Default: `noop`.
+
+#### onResize
+Executes when either container or dragged target sizes change.
+- Accepts: `Function` (first arg is draggable instance). Default: `noop`.
+
+#### onAfterResize
+Executes after container/target sizes change AND draggable values have been updated. Useful for repositioning.
+- Accepts: `Function` (first arg is draggable instance). Default: `noop`.
+- Code Example: `createDraggable('.item', { container:'.grid', onAfterResize: self => self.animateInView(500, 20) });`
+
+### Draggable Methods
+Control state and behavior of a draggable. Accessible on Draggable instance.
+`const draggable = createDraggable(target); draggable.disable();`
+
+#### disable()
+Deactivates draggable, making it inert.
+- Returns: `Draggable` (self).
+
+#### enable()
+Reactivates a previously disabled draggable.
+- Returns: `Draggable` (self).
+
+#### setX(xValue, muteCallback), setY(yValue, muteCallback)
+Manually set x or y position of draggable target. Equivalent to `draggable.x = xValue` if `muteCallback` is `false` or omitted.
+- **xValue/yValue** `Number`: The new x or y value.
+- **muteCallback** (opt) `Boolean`: If `true`, prevents `onUpdate` callback from firing. Default: `false`.
+- Returns: `Draggable` (self).
+- Code Example: `myDraggable.setX(100); myDraggable.setY(50, true); // Set Y without firing onUpdate`
+
+#### animateInView(duration, gap, ease)
+Animates draggable inside viewport if positioned outside container.
+- **duration** (opt) `Number`: Animation duration (ms). Default: `350`.
+- **gap** (opt) `Number`: Extra distance (px) from container edges. Default: `0`.
+- **ease** (opt) `ease`: Easing function. Default: `eases.inOutQuad`.
+- Returns: `Draggable` (self).
+
+#### scrollInView(duration, gap, ease)
+Animates scroll position of container if draggable is outside scroll threshold.
+- Parameters: Same as `animateInView()`.
+- Returns: `Draggable` (self).
+
+#### stop()
+Stops all currently running animations targeting the draggable (its own movement, container scroll, release animation).
+- Returns: `Draggable` (self).
+
+#### reset()
+Restores draggable element to its initial position (position at creation).
+- Returns: `Draggable` (self).
+
+#### revert()
+Restores draggable element to its initial state (styles, position) and deactivates it.
+- Returns: `Draggable` (self).
+
+#### refresh()
+Re-computes every parameter defined using a function and re-calculates all internal values (bounds, etc.).
+- Refreshable parameters: `snap`, `container`, `containerPadding`, `containerFriction`, `dragSpeed`, `scrollSpeed`, `scrollThreshold`, `minVelocity`, `maxVelocity`, `velocityMultiplier`.
+- Returns: `Draggable` (self).
+
+### Draggable Properties
+Accessed on Draggable instance: `draggable.x`, `draggable.velocity`.
+- **x, y** `Number`: Get/set current x/y position of dragged element.
+- **progressX, progressY** `Number`: Get/set progress (0-1) of x/y position relative to container dimensions.
+- **velocity** `Number`: Get current velocity of draggable element.
+- **angle** `Number`: Get current movement angle (radians) of draggable.
+- **snapX, snapY** `Number | Array<Number>`: Get/set snap value for x/y axis.
+- **scrollSpeed, scrollThreshold, dragSpeed, maxVelocity, minVelocity, velocityMultiplier** `Number`: Get/set corresponding settings.
+- **releaseEase** `Function`: Get/set easing function for release animations.
+- **$container, $target, $trigger** `HTMLElement`: Get/set respective DOM elements.
+- **enabled** `Boolean`: True if draggable is enabled.
+- **grabbed** `Boolean`: True if element is currently grabbed.
+- **dragged** `Boolean`: True if element is currently being dragged.
+- (Many other properties providing detailed state and configuration are available).
+
+---
+## ScrollObserver (V4)
+Triggers and synchronises Timer, Animation, and Timeline instances on scroll.
+Created with `onScroll()` function, often declared in `autoplay` parameter of an animation/timer/timeline.
+`import { onScroll, animate } from 'animejs';`
+`animate(targets, { x:100, autoplay: onScroll(parameters) });`
+
+### Example: ScrollObserver Creation
+```javascript
+import { animate, utils, onScroll } from 'animejs';
+const [ scrollContainer ] = utils.$('.scroll-container'); // HTML: <div class="scroll-container" style="height:200px; overflow-y:scroll;">...</div>
+// Animation linked to scroll
+animate('.square-scroll', {
+  x: '15rem',
+  rotate: '1turn',
+  autoplay: onScroll({ container: scrollContainer, debug: true }) // Animates when .square-scroll is in view within .scroll-container
+});
+```
+HTML: `<div class="scroll-container" style="height:150px;overflow-y:scroll;"><div style="height:400px;padding-top:100px;"><div class="square-scroll"></div></div></div>`
+
+### ScrollObserver Settings
+Defined in `onScroll()` parameters Object.
+`animate('.sq', { x:100, autoplay: onScroll({ container:'.cont', target:'.sect', axis:'y', ... }) });`
+
+#### container
+Specifies scroll container HTMLElement.
+- Accepts: `CSS Selector`, `DOM Element`.
+- Default: `null` (usually implies `window` or nearest scrollable parent if linked object is an animation).
+
+#### target
+Specifies HTMLElement that triggers scroll event when it interacts with viewport/container.
+- Accepts: `CSS Selector`, `DOM Element`.
+- Default: If `onScroll` is on an animation, first target of animation. Else `null`.
+
+#### debug
+Displays visual markers for enter/leave thresholds. Each instance has dedicated color. Left side of ruler = container threshold, right side = target threshold.
+- Accepts: `Boolean`. Default: `false`.
+
+#### axis
+Specifies scroll direction of `container`.
+- Accepts: `'x'`, `'y'`. Default: `'y'`.
+
+#### repeat
+Specifies if scroll synchronisation should repeat after linked object (Animation/Timer/Timeline) completes. If `false`, ScrollObserver instance reverted after first completion.
+- Accepts: `Boolean`. Default: `true`.
+
+### ScrollObserver Thresholds
+Determine points at which actions trigger based on target scrolling within container. Defined with `enter` and `leave` properties in `onScroll()` parameters.
+`onScroll({ enter: 'bottom top', leave: 'top bottom', ... })`
+Conditions compare target element's start/end edges with container's start/end edges.
+- Syntax options:
+  - Object: `enter: { target: 'top', container: 'bottom' }`
+  - Container value String: `enter: 'bottom'` (target defaults to 'start' for enter, 'end' for leave).
+  - Container & target shorthand String: `enter: 'bottom top'` (container edge first, target edge second).
+- Default `enter`: `'end start'` (target's bottom edge meets container's top edge).
+- Default `leave`: `'start end'` (target's top edge meets container's bottom edge).
+
+#### Numeric values
+Defines offset from top (for y-axis) or left (for x-axis) of target/container. Unitless values interpreted as pixels.
+- Accepts: `Number` (px), `String` (e.g., `'1rem'`, `'10%'` of target/container height/width).
+- Default unit: `px`.
+- Code Example: `onScroll({ enter: '80px -48px', leave: '67.5% 250%', debug:true })`
+  (Enter: container 80px from top, target -48px from its top. Leave: container 67.5% down, target 250% down from its top).
+
+#### Positions shorthands
+Defines position of target/container by name.
+- Accepts: `'top'`, `'bottom'`, `'left'`, `'right'`, `'center'`, `'start'` (top/left depending on axis), `'end'` (bottom/right depending on axis).
+- Code Example: `onScroll({ enter: 'center top', leave: 'center bottom', debug:true })`
+  (Enter: center of container meets top of target. Leave: center of container meets bottom of target).
+
+#### Relative position values
+Defines position values relative to target/container top/left coordinate using `+=`, `-=`, `*=`.
+- Accepts: `String` (e.g., `'+=45px'`, `'-=50%'`, `'*=.5'`).
+- Code Example: `onScroll({ enter: 'center+=1em top-=100%', debug:true })`
+  (Enter: container edge is 1em below its center, target edge is 100% of its height above its top).
+
+#### Min max
+Defines threshold at minimum or maximum scrollable space available. Useful if elements start too close to edges.
+- Accepts: `'min'`, `'max'`.
+- Code Example: `onScroll({ enter: 'max bottom', leave: 'min top', sync:1, debug:true })`
+  (Enter: when target bottom reaches max possible scroll point of container. Leave: when target top reaches min scroll point).
+
+### ScrollObserver Synchronisation Modes
+Determines behavior of linked object (Animation/Timer/Timeline) relative to scroll. Defined by `sync` property in `onScroll()` parameters.
+
+#### Method names
+List of linked object's method names (e.g., `play`, `pause`, `reverse`) to call when specific callbacks triggered.
+- Accepts: `String` (space-separated method names).
+- Callback definition order for methods:
+  - `'enterMethod'` (called on enter and re-enter)
+  - `'enterMethod leaveMethod'` (called on enter and leave thresholds)
+  - `'enterForward leaveForward enterBackward leaveBackward'` (directional enter/leave)
+- Default: `'play pause'`.
+- Code Example: `onScroll({ sync: 'resume pause reverse reset', debug:true })`
+
+#### Playback progress
+Perfectly synchronizes linked object's playback progress to scroll position between `enter` and `leave` thresholds.
+- Accepts: `1` or `true`.
+- Code Example: `onScroll({ sync: true, ease: 'linear', debug:true })` (Progress maps 1:1 with scroll position).
+
+#### Smooth scroll
+Smoothly animates linked object's playback progress to current scroll position. Value (0-1) controls "lag"; closer to 0 = longer to catch up.
+- Accepts: `Number` (0 to <1).
+- Code Example: `onScroll({ sync: .25, debug:true })` (Animation smoothly follows scroll with some lag).
+
+#### Eased scroll
+Applies an easing function to synchronized playback progress relative to scroll position.
+- Accepts: `ease` (string name or function).
+- Code Example: `onScroll({ sync: 'inOutCirc', debug:true })` (Progress mapped with an ease curve).
+
+### ScrollObserver Callbacks
+Trigger functions at specific points during scroll. Defined in `onScroll()` parameters.
+
+#### onEnter
+Triggers when `enter` threshold met (either direction).
+- Accepts: `Function` (first arg is ScrollObserver instance). Default: `noop`.
+
+#### onEnterForward
+Triggers when `enter` threshold met by scrolling forward.
+- Accepts: `Function` (first arg is ScrollObserver instance). Default: `noop`.
+
+#### onEnterBackward
+Triggers when `enter` threshold met by scrolling backward.
+- Accepts: `Function` (first arg is ScrollObserver instance). Default: `noop`.
+
+#### onLeave
+Triggers when `leave` threshold met (either direction).
+- Accepts: `Function` (first arg is ScrollObserver instance). Default: `noop`.
+
+#### onLeaveForward
+Triggers when `leave` threshold met by scrolling forward.
+- Accepts: `Function` (first arg is ScrollObserver instance). Default: `noop`.
+
+#### onLeaveBackward
+Triggers when `leave` threshold met by scrolling backward.
+- Accepts: `Function` (first arg is ScrollObserver instance). Default: `noop`.
+
+#### onUpdate
+Triggers when linked object's progress updates due to scroll synchronization.
+- Accepts: `Function` (first arg is ScrollObserver instance). Default: `noop`.
+
+#### onSyncComplete
+Triggers when linked object's synchronization completes (e.g., animation reaches end of its duration due to scroll).
+- Accepts: `Function` (first arg is ScrollObserver instance). Default: `noop`.
+
+### ScrollObserver Methods
+Control state and behavior. Available on instance returned by `onScroll()`.
+`const scrollObserver = onScroll(parameters); scrollObserver.link(myAnimation);`
+
+#### link(linkedObject)
+Connects an Animation, Timer, or Timeline to ScrollObserver instance. Equivalent to defining `onScroll()` in `autoplay`. Overrides previously linked object.
+- Accepts: `Animation | Timer | Timeline`.
+- Returns: `ScrollObserver` (self).
+- Code Example:
+  ```javascript
+  const anim = animate('.sq', {x:'10rem', autoplay:false});
+  const obs = onScroll({ container:'.scroller', sync:true });
+  obs.link(anim); // Now anim is controlled by obs
+  ```
+
+#### refresh()
+Updates bounding values and re-computes function-based parameters (`repeat`, `axis`, `enter`, `leave`). Automatically called on container resize.
+- Returns: `ScrollObserver` (self).
+- Code Example: `myScrollObserver.refresh(); // If thresholds depend on dynamic external values.`
+
+#### revert()
+Disables ScrollObserver, removes all EventListeners, removes debug HTMLElement if present.
+- Returns: `ScrollObserver` (self).
+- Code Example: `myScrollObserver.revert(); // To clean up.`
+
+### ScrollObserver Properties
+Accessed on ScrollObserver instance: `scrollObserver.target`.
+- **id** `Number`: Unique ID for instance.
+- **container** `ScrollContainer`: Scroll container element.
+- **target** `HTMLElement`: Observed target element.
+- **linked** `Animation | Timer | Timeline`: The object linked for scroll control.
+- **repeat** `Boolean`: Whether observer should repeat.
+- **horizontal** `Boolean`: True if scroll direction is horizontal.
+- **enter, leave** `String | Number | Object`: Parsed enter/leave threshold values.
+- **sync** `Boolean | Number | String | Function`: Synchronization mode/value.
+- **velocity** `Number`: Current scroll velocity.
+- **backward** `Boolean`: True if current scroll direction is backward.
+- **scroll** `Number`: Current scroll position of the container.
+- **progress** `Number`: Current progress (0-1) of observed element between enter/leave thresholds.
+- **completed** `Boolean`: True if linked object's full duration has been scrolled through.
+- **began** `Boolean`: True if target has entered the observation zone.
+- **isInView** `Boolean`: True if observed element is currently within enter/leave thresholds.
+- (Other properties for offsets, distances, internal state may be available).
+
+---
+## Scope (V4)
+Manages Anime.js instances for responsive design (media queries), component-based environments (root elements), shared default parameters, and batch reverting.
+Created using `createScope()`.
+`import { createScope } from 'animejs'; const scope = createScope(parameters);`
+
+### Example: Scope Creation
+```javascript
+import { animate, utils, createScope } from 'animejs';
+createScope({
+  mediaQueries: { isSmall: '(max-width: 200px)' } // Define media queries
+})
+.add(self => { // 'self' is the Scope instance
+  const { isSmall } = self.matches; // Access media query state
+  animate('.square-scoped', {
+    x: isSmall ? '5rem' : '15rem', // Different animation based on size
+    duration: isSmall ? 750 : 1250,
+    loop: true, alternate: true
+  });
+});
+```
+HTML: `<div class="square-scoped"></div> <!-- Resize window/iframe to see effect -->`
+
+### Add Constructor Function
+A function passed to `scope.add()` is executed immediately within Scope's context. Scope registers and tracks all Anime.js instances (animations, timers, etc.) declared inside this function.
+`scope.add(constructorFunction);`
+- **constructorFunction** argument:
+  - **self** `Scope`: The current Scope instance.
+- **Returns** (optional): A cleanup `Function` called when Scope is reverted or a media query it watches changes (triggering a refresh).
+- Code Example:
+  ```javascript
+  createScope({ mediaQueries: { isSmall: '(max-width: 200px)' } })
+  .add(self => {
+    const { isSmall } = self.matches;
+    const anim = animate('.item', { scale: isSmall ? 0.5 : 1 });
+    const timer = createTimer({ duration: 1000, onComplete: () => console.log("Timer done in scope") });
+    // This scope now tracks 'anim' and 'timer'.
+    return () => {
+      console.log('Scope cleanup for .item, isSmall was:', isSmall);
+      // anim and timer are automatically reverted by the scope.
+      // Add custom cleanup here if needed (e.g. remove event listeners).
+    };
+  });
+  ```
+
+### Register Method Function
+Register a method within a Scope by passing a name string and a function to `scope.add()`. Method becomes available on `scope.methods.methodName()`. Allows calling from outside Scope while maintaining execution context within Scope.
+`scope.add('methodName', methodFunction); scope.methods.methodName(args);`
+- **methodFunction** arguments: `...args` (any arguments passed when calling). `this` inside `methodFunction` refers to the Scope instance.
+- Code Example:
+  ```javascript
+  import { utils, animate, createScope } from 'animejs';
+  const myScope = createScope({ mediaQueries: { isSmall:'(max-width:200px)' } });
+  myScope.add('triggerAnimation', (event) => { // 'this' or 'self' (if passed) is myScope
+    const { clientX } = event;
+    const { isSmall } = myScope.matches; // or this.matches
+    animate('.dot', { left: clientX, background: isSmall ? 'red' : 'blue' });
+  });
+  document.body.addEventListener('click', (e) => myScope.methods.triggerAnimation(e));
+  ```
+  HTML: `<div class="dot" style="position:absolute; width:10px; height:10px; background:black;"></div>`
+
+### Scope Parameters
+Defined in `createScope()` parameters Object.
+`createScope({ root:'.section', defaults:{duration:250}, mediaQueries:{mobile:'(max-width:640px)'} });`
+
+#### root
+Defines root element, limiting all DOM queries (`utils.$()` inside scope) to its descendants. Useful for component-based architectures.
+- Accepts: `CSS Selector`, `DOM Element`.
+- Code Example:
+  ```javascript
+  // Only squares within .row-2 will be animated by this scope.
+  createScope({ root: '.row-2' })
+  .add(() => { animate('.square-in-scope', { x: '10rem' }); });
+  ```
+  HTML: `<div class="row-1"><div class="square-in-scope"></div></div> <div class="row-2"><div class="square-in-scope"></div></div>`
+
+#### defaults
+Defines Scope default properties for all Timer, Animation, Timeline created within it.
+- Accepts: `Object` with optional properties like `duration`, `ease`, `loop`, `onComplete`, etc. (See Timer/Animation default lists).
+- Code Example:
+  ```javascript
+  createScope({ root: '.row-blue', defaults: { ease: 'outExpo', color: 'blue' }})
+  .add(() => { animate('.sq-blue', { x: '10rem' }); }); // Will use outExpo ease, target color blue
+  ```
+
+#### mediaQueries
+Defines media queries to match. Scope refreshes (reverts and re-runs constructors) when match state changes. States accessible via `scope.matches.queryName`.
+- Accepts: `Object` where key is arbitrary name `String`, value is media query definition `String`.
+- Code Example:
+  ```javascript
+  createScope({ mediaQueries: { narrow: '(max-width:150px)', wide: '(min-width:151px)' }})
+  .add(self => {
+    utils.set('.status-box', { innerHTML: self.matches.narrow ? 'Narrow' : 'Wide' });
+    animate('.sq-mq', { scale: self.matches.narrow ? 0.5 : 1.5 });
+  });
+  ```
+  HTML: `<div class="status-box"></div> <div class="sq-mq"></div> <!-- Resize to see effect -->`
+
+### Scope Methods
+Available on Scope instance.
+`const scope = createScope(); scope.add(constructorFunc); scope.refresh();`
+
+#### add(callbackOrName, [methodCallback])
+Adds a constructor function or registers a method function to the Scope.
+- Add constructor: `scope.add(constructorFunction);`
+  - **constructorFunction** `Function`: Executed in scope context.
+- Register method: `scope.add(nameString, methodFunction);`
+  - **nameString** `String`: Name to access method via `scope.methods`.
+  - **methodFunction** `Function`: The method to register.
+- Returns: `Scope` (self).
+
+#### revert()
+Reverts all Anime.js objects declared inside Scope and calls constructor cleanup functions if defined.
+- Returns: `Scope` (self).
+- Code Example:
+  ```javascript
+  const myScope = createScope().add(() => { /* create animations */ return () => {/* cleanup */}; });
+  // Later, to remove all animations and run cleanup:
+  // myScope.revert();
+  ```
+
+#### refresh()
+Reverts Scope and rebuilds it by re-calling all its constructor functions. Called internally when a watched media query's state changes.
+- Returns: `Scope` (self).
+- Code Example: `myScope.refresh(); // Manually trigger a full re-initialization.`
+
+### Scope Properties
+Accessed on Scope instance: `scope.matches`, `scope.root`.
+- **data** `Object`: User-defined object to store variables associated with scope. Cleared on revert.
+- **defaults** `Object`: Gets default parameters for this scope.
+- **root** `Document | HTMLElement`: Gets root element for DOM operations.
+- **constructors** `Array<Function>`: Gets array of constructor functions.
+- **revertConstructors** `Array<Function>`: Gets array of revert/cleanup functions returned by constructors.
+- **revertibles** `Array<Tickable|Animatable|Draggable|ScrollObserver|Scope>`: Array of Anime.js objects created within this scope.
+- **methods** `Object`: Object containing methods registered via `scope.add('name', func)`.
+- **matches** `Object`: Object containing current media query match results (boolean states).
+- **mediaQueryLists** `Object`: Object containing `MediaQueryList` objects for this scope.
+
+---
+## Stagger
+Creates sequential effects by distributing values progressively across multiple targets.
+`stagger()` function returns a `Function based value` for use in animation parameters.
+`import { stagger } from 'animejs'; const staggerFunction = stagger(value, parameters);`
+
+### Example: Stagger Usage
+```javascript
+import { animate, stagger } from 'animejs';
+animate('.stagger-square', {
+  x: '17rem', // All squares animate to 17rem
+  scale: stagger([1, .1]), // Scale staggers from 1 down to 0.1 across squares
+  delay: stagger(100), // Delay for each square increases by 100ms
+});
+```
+HTML: `<div class="stagger-square"></div><div class="stagger-square"></div><div class="stagger-square"></div>`
+
+### Time Staggering
+Use `stagger()` for time-related tween properties like `delay` and `duration` in multi-target animations. Each target's tween will have progressively different timings.
+- Code Example:
+  ```javascript
+  animate('.time-stagger-sq', {
+    x: '17rem',
+    delay: stagger(100), // 0ms, 100ms, 200ms...
+    duration: stagger(200, { start: 500 }), // 500ms, 700ms, 900ms...
+    loop: true, alternate: true
+  });
+  ```
+  HTML: `<div class="time-stagger-sq">S1</div><div class="time-stagger-sq">S2</div><div class="time-stagger-sq">S3</div>`
+
+### Values Staggering
+Use `stagger()` for animatable property values. Each target will animate to/from a staggered value.
+- Code Example:
+  ```javascript
+  animate('.value-stagger-sq', {
+    y: stagger(['-2.75rem', '2.75rem']), // y values distributed between -2.75rem and 2.75rem
+    rotate: { from: stagger('-.125turn') }, // 'from' rotation value staggered
+    loop: true, alternate: true
+  });
+  ```
+  HTML: `<div class="value-stagger-sq"></div> ... (multiple elements) ... </div>`
+
+### Timeline Positions Staggering (V4)
+Use `stagger()` for `timeline.add()` `position` argument with multi-target animation. Each target creates its own animation at a staggered position. Callbacks on animation are also staggered. `stagger()` `start` parameter accepts timeline time position values.
+- Code Example:
+  ```javascript
+  import { createTimeline, stagger, utils } from 'animejs';
+  const tl = createTimeline();
+  tl.add('.tl-stagger-item', { x: '15rem' }, stagger(500, { start: 'someLabel-=200' }));
+  // Each .tl-stagger-item animation starts 500ms after the previous, relative to 'someLabel'-200ms.
+  ```
+
+### Stagger Value Types
+The first argument to `stagger(VALUE, parameters)`.
+
+#### Numerical value
+Represents increment amount for each staggered value.
+- Accepts: `Number`, `String` containing at least one number.
+- Code Example: `stagger('5rem')` (for x position), `stagger(100)` (for delay).
+
+#### Range value
+Distributes values evenly between two numerical values.
+- Accepts: `[Number|String, Number|String]` (an array of two values).
+- Code Example: `stagger(['0rem', '10rem'])`, `stagger([0, 500])` (for delay).
+
+### Stagger Parameters
+Optional second argument to `stagger(value, PARAMETERS_OBJECT)`.
+
+#### start
+Defines starting value of the stagger.
+- Accepts: `Number`, Timeline `Time position` (only when `stagger()` is used as timeline position argument).
+- Default: `0`.
+- Code Example: `stagger('1rem', { start: 14 })` (x values: 14rem, 15rem, 16rem...).
+
+#### from
+Defines starting position (index or keyword) of stagger effect within target collection.
+- Accepts: `Number` (index), `'first'` (index 0), `'center'`, `'last'`.
+- Default: `0` (equivalent to `'first'`).
+- Code Example: `stagger(50, { from: 'center' })` (stagger originates from center element).
+
+#### reversed
+Defines if stagger should operate in reverse order of targets.
+- Accepts: `Boolean`. Default: `false`.
+- Code Example: `stagger(100, { reversed: true })` (last element gets first stagger value).
+
+#### ease
+Defines easing applied to distribution of staggered values.
+- Accepts: `ease` (string name or function). Default: `'linear'`.
+- Code Example: `stagger(['0%', '100%'], { ease: 'inOutQuad' })`.
+
+#### grid
+Distributes values based on a 2D grid layout of targets.
+- Accepts: `[<Number_cols>, <Number_rows>]`. Default: `null`.
+- Code Example: `stagger(100, { grid: [11, 4], from: utils.random(0, 43) })` (for delay, with 11x4 grid).
+
+#### axis (for grid)
+Defines direction of staggered grid effect, restricting updates to one axis.
+- Accepts: `'x'`, `'y'`. Default: `null` (both axes considered for distance).
+- Code Example: `stagger('-.75rem', { grid: [11,4], from: 'center', axis: 'x' })` (stagger based on x-distance from center).
+
+#### modifier
+Defines a function to modify the returned staggered value *after* easing and other calculations.
+- Accepts: `Function(value)` (current staggered numerical value).
+- Must return: `Number | String`.
+- Code Example: `stagger([1, .25], { modifier: v => \`0 0 \${v * 30}px \${v * 20}px currentColor\` })`.
+
+---
+## SVG
+Utility functions for SVG morphing, line drawing, and motion path animations.
+All SVG utilities are available on the `svg` object.
+`import { svg } from 'animejs';`
+
+### `morphTo(shapeTarget, precision)`
+Creates a morphing animation value for SVG `<path d="">` or `<polygon/polyline points="">` attributes.
+- Parameters:
+  - **shapeTarget** `CSS selector | SVGPathElement | SVGPolylineElement | SVGPolygonElement`: The target shape to morph to.
+  - **precision** (opt) `Number` (0 to 1): Amount of points generated for morphing. `0` = no points extrapolation. Default: `.33`.
+- Returns: `Array` containing `[initialShapeString, finalShapeString]`. Used as a property value: `points: svg.morphTo(otherShape)`.
+- Code Example:
+  ```javascript
+  import { animate, svg, utils } from 'animejs';
+  const [ polygon1, polygon2 ] = utils.$('polygon.morph-poly'); // HTML: <polygon class="morph-poly" points="..."><polygon class="morph-poly" points="...">
+  // Assume polygon2 has the target shape's points attribute set.
+  animate(polygon1, { points: svg.morphTo(polygon2), duration: 1000 });
+  ```
+  HTML: `<svg><polygon class="morph-poly" points="0,100 50,0 100,100"></polygon><polygon class="morph-poly" style="display:none;" points="0,0 100,0 50,100"></polygon></svg>`
+
+### `createDrawable(target)`
+Creates a Proxy of an SVGElement, exposing an extra `draw` property that defines how much of the line is visible/drawn.
+- Parameters:
+  - **target** `CSS selector | SVGLineElement | SVGPathElement | SVGPolylineElement | SVGRectElement`.
+- Returns: `Array` of Proxy SVGElements (one for each matched target).
+- `draw` property accepts a `String` `'startValue endValue'` (e.g., `'0 1'` for full draw, `'0 .5'` for first half, `'.25 .75'` for middle half). Values are 0-1.
+- Note: Animating elements with `vector-effect="non-scaling-stroke"` can be slow due to recalculations.
+- Code Example:
+  ```javascript
+  import { animate, svg, stagger } from 'animejs';
+  animate(svg.createDrawable('path.drawable-path'), { // Returns array, animate works on it
+    draw: ['0 0', '0 1', '1 1'], // from no draw, to half, to full
+    ease: 'inOutQuad',
+    duration: 2000,
+    delay: stagger(100),
+    loop: true
+  });
+  ```
+  HTML: `<svg><path class="drawable-path" d="M10 10 H 90 V 90 H 10 Z" stroke="black" fill="none"/></svg>`
+
+### `createMotionPath(pathTarget)`
+Creates pre-defined Tween parameter objects to animate an element along an SVGPathElement's coordinates and inclination.
+`const { translateX, translateY, rotate } = svg.createMotionPath(pathTarget);`
+- Parameters:
+  - **pathTarget** `CSS selector | SVGPathElement`: The SVG path to follow.
+- Returns: `Object` with properties:
+  - `translateX`: Tween parameter object for x-coordinate.
+  - `translateY`: Tween parameter object for y-coordinate.
+  - `rotate`: Tween parameter object for rotation along path.
+- Code Example:
+  ```javascript
+  import { animate, svg } from 'animejs';
+  animate('.motion-car', { // Element to move
+    ease: 'linear', duration: 5000, loop: true,
+    ...svg.createMotionPath('path#motion-track') // Spread returned transform objects
+  });
+  ```
+  HTML: `<svg><path id="motion-track" d="M10,50 Q50,10 90,50 T170,50" fill="none" stroke="lightgray"/></svg> <div class="motion-car" style="width:10px;height:10px;background:red;position:absolute;"></div>`
+
+---
+## Utilities
+Collection of utility functions for common tasks, often used as Animation Modifiers.
+All utilities are available on the `utils` object.
+`import { utils } from 'animejs';`
+
+### `$()` (V4)
+Converts `targets` parameter into an `Array` of elements. Alternative to `document.querySelectorAll()`.
+If used within a `Scope`, it uses Scope's `root` element instead of `document`.
+`const targetsArray = utils.$(targets);`
+- Parameters: **targets** `CSS selector | DOM Elements | NodeList | HTMLElement`.
+- Returns: `Array` of `HTMLElement | SVGElement | SVGGeometryElement`.
+- Code Example: `utils.$('.my-elements').forEach(el => el.style.opacity = 0.5);`
+
+### `get(target, property, unit)`
+Returns current value of a target's property. Can convert or strip units.
+`const value = utils.get(target, property, unit);`
+- Parameters:
+  - **target** `Targets` (single element expected for reliable value).
+  - **property** `String`: Valid property name (CSS property, attribute, JS object key).
+  - **unit** (opt) `String | Boolean`: `false` to strip unit (returns `Number`), `String` (e.g., `'rem'`) to convert to that unit.
+- Returns: Value, type depends on `unit` (`String` with unit, `Number` if unit stripped).
+- Code Example:
+  ```javascript
+  const el = document.querySelector('.box'); // style="transform: translateX(100px);"
+  console.log(utils.get(el, 'translateX')); // "100px"
+  console.log(utils.get(el, 'translateX', 'rem')); // e.g., "6.25rem" (depends on root font-size)
+  console.log(utils.get(el, 'translateX', false)); // 100
+  ```
+
+### `set(targets, properties)`
+Immediately sets one or multiple property values to one or multiple targets.
+`const setterAnimation = utils.set(targets, properties);`
+- Parameters:
+  - **targets** `Targets`.
+  - **properties** `Object`: Key-value pairs of properties and values.
+- Returns: `Animation` instance (which can be `.revert()`-ed).
+- Notes: For repeatedly updating same properties on same targets, `Animatable` is more performant. `utils.set()` won't work if trying to set an attribute on DOM/SVG element not already defined on element.
+- Code Example: `utils.set('.box', { opacity: 0.5, scale: 1.2, '--custom-color': 'red' });`
+
+### `remove(targets, instance, propertyName)`
+Removes one or multiple targets from all active animations, a specific instance, or a specific property on an instance. Cancels `Animation` or `Timeline` referencing these targets if they become empty.
+`const removedElements = utils.remove(targets, instance, propertyName);`
+- Parameters:
+  - **targets** `Targets`.
+  - **instance** (opt) `Animation | Timeline`: Specific instance to remove targets from.
+  - **propertyName** (opt) `String`: Specific animatable property name on instance.
+- Returns: `Array` of removed targeted elements.
+- Code Example: `utils.remove('.box-to-remove', myAnimationInstance, 'opacity'); // Remove .box-to-remove from myAnimationInstance's opacity tween.`
+
+### `cleanInlineStyles(instance)` (V4)
+Removes all CSS inline styles added *by the specified instance*. Can be used as `onComplete()` callback for `Animation` or `Timeline`.
+`const cleanedInstance = utils.cleanInlineStyles(instance);`
+- Parameters: **instance** `Animation | Timeline`.
+- Returns: Passed `Animation` or `Timeline` instance.
+- Code Example: `animate('.el', { x:100, onComplete: utils.cleanInlineStyles }); // Removes style="transform:translateX(100px)" on complete.`
+
+### `random(min, max, decimalLength)`
+Returns a random `Number` within a specified range [min, max].
+- Parameters:
+  - **min** `Number`.
+  - **max** `Number`.
+  - **decimalLength** (opt) `Number`: Number of decimal places. Default: `0`.
+- Returns: `Number`.
+- Code Example: `utils.random(0, 100); // Integer between 0-100. utils.random(-10, 10, 2); // e.g., 5.73`
+
+### `randomPick(collection)` (V4)
+Returns a random element from a collection (Array, NodeList, or String).
+`const randomElement = utils.randomPick(collection);`
+- Parameters: **collection** `Array | NodeList | String`.
+- Returns: Random element from the collection.
+- Code Example: `utils.randomPick(['apple', 'banana', 'cherry']); utils.randomPick(document.querySelectorAll('div'));`
+
+### `shuffle(array)` (V4)
+Mutates (shuffles in-place) an array by randomizing the order of its elements.
+`const shuffledArray = utils.shuffle(array);`
+- Parameters: **array** `Array`.
+- Returns: The mutated (shuffled) `Array`.
+- Code Example: `let arr = [1,2,3,4]; utils.shuffle(arr); // arr is now e.g. [3,1,4,2]`
+
+### `sync(callback)` (V4)
+Executes a callback function in sync with the engine's main loop (once, on the next available frame).
+`utils.sync(functionToExecute);`
+- Parameters: **callback** `Function`.
+- Returns: `Timer` instance that runs once.
+- Code Example: `utils.sync(() => myAnimation.speed = newSpeedValue); // Safely update speed on next tick.`
+
+### `lerp(start, end, amount)` (V4)
+Performs linear interpolation between two values. `amount` is 0-1. Frame rate independent.
+`const lerpedValue = utils.lerp(start, end, amount);`
+- Parameters: **start** `Number`, **end** `Number`, **amount** `Number` (0-1, progress).
+- Returns: `Number`.
+- Code Example: `utils.lerp(0, 100, 0.5); // Returns 50`
+
+### `round(valueOrDecimalLength, decimalLength)`
+Rounds a `Number` to specified decimal places. If `value` omitted, returns a chainable rounding function.
+- `utils.round(value, decimalLength)`: Returns rounded `Number`.
+- `utils.round(decimalLength)`: Returns chainable `Function(value) => Number`.
+- Code Example: `utils.round(10.567, 1); // 10.6`. `const roundTo2 = utils.round(2); roundTo2(5.1234); // 5.12`
+
+### `clamp(valueOrMin, minOrMax, max)` (V4)
+Restricts a `Number` between specified min/max. If `value` omitted, returns chainable clamping function.
+- `utils.clamp(value, min, max)`: Returns clamped `Number`.
+- `utils.clamp(min, max)`: Returns chainable `Function(value) => Number`.
+- Code Example: `utils.clamp(150, 0, 100); // 100`. `const clamp0To50 = utils.clamp(0, 50); clamp0To50(75); // 50`
+
+### `snap(valueOrIncrement, increment)` (V4)
+Rounds `Number` to nearest specified increment or closest value in an array. If `value` omitted, returns chainable snapping function.
+- `utils.snap(value, increment)`: Returns snapped `Number`.
+- `utils.snap(increment)`: Returns chainable `Function(value) => Number`.
+- **increment** `Number | Array<Number>`.
+- Code Example: `utils.snap(94, 10); // 90`. `const snapToGrid = utils.snap([0, 50, 100]); snapToGrid(30); // 50`
+
+### `wrap(valueOrMin, minOrMax, max)` (V4)
+Wraps `Number` between min/max range. If `value` omitted, returns chainable wrapping function.
+- `utils.wrap(value, min, max)`: Returns wrapped `Number`.
+- `utils.wrap(min, max)`: Returns chainable `Function(value) => Number`.
+- Code Example: `utils.wrap(105, 0, 100); // 5`. `const wrap0To10 = utils.wrap(0,10); wrap0To10(-3); // 7`
+
+### `mapRange(valueOrFromLow, fromLowOrFromHigh, ..., toHigh)` (V4)
+Maps `Number` from one range to another. If `value` omitted, returns chainable mapping function.
+- `utils.mapRange(value, fromLow, fromHigh, toLow, toHigh)`: Returns mapped `Number`.
+- `utils.mapRange(fromLow, fromHigh, toLow, toHigh)`: Returns chainable `Function(value) => Number`.
+- Code Example: `utils.mapRange(50, 0, 100, 0, 1); // 0.5`. `const normalize = utils.mapRange(0, 255, 0, 1); normalize(128); // approx 0.5`
+
+### `interpolate(start, end, progress)` (V4)
+Interpolates value between two numbers based on `progress` (0-1). If `progress` omitted, returns chainable interpolating function.
+- `utils.interpolate(start, end, progress)`: Returns interpolated `Number`.
+- `utils.interpolate(start, end)`: Returns chainable `Function(progress) => Number`.
+- Code Example: `utils.interpolate(0, 100, 0.75); // 75`. `const interp0To10 = utils.interpolate(0,10); interp0To10(0.2); // 2`
+
+### `roundPad(valueOrDecimalLength, decimalLength)` (V4)
+Rounds value to `decimalLength`, pads with zeros if needed, returns `String`. If `value` omitted, returns chainable function.
+- `utils.roundPad(value, decimalLength)`: Returns `String`.
+- `utils.roundPad(decimalLength)`: Returns chainable `Function(value) => String`.
+- Code Example: `utils.roundPad(120, 2); // "120.00"`. `utils.roundPad(15.9, 2); // "15.90"`
+
+### `padStart(valueOrTotalLength, totalLengthOrPadString, padString)` (V4)
+Pads `Number`/`String` from start with `padString` until result reaches `totalLength`. If `value` omitted, returns chainable function.
+- `utils.padStart(value, totalLength, padString)`: Returns `String`.
+- `utils.padStart(totalLength, padString)`: Returns chainable `Function(value) => String`.
+- Code Example: `utils.padStart('123', 5, '0'); // "00123"`. `utils.padStart(78, 4, '0'); // "0078"`
+
+### `padEnd(valueOrTotalLength, totalLengthOrPadString, padString)` (V4)
+Pads `Number`/`String` from end. If `value` omitted, returns chainable function.
+- `utils.padEnd(value, totalLength, padString)`: Returns `String`.
+- `utils.padEnd(totalLength, padString)`: Returns chainable `Function(value) => String`.
+- Code Example: `utils.padEnd('123', 5, '0'); // "12300"`. `utils.padEnd(7, 3, '!'); // "7!!"`
+
+### `degToRad(degrees)` (V4)
+Converts degrees to radians. If `degrees` omitted, returns chainable function.
+- `utils.degToRad(degrees)`: Returns `Number`.
+- `utils.degToRad()`: Returns chainable `Function(degrees) => Number`.
+- Code Example: `utils.degToRad(180); // Math.PI (approx 3.14159)`
+
+### `radToDeg(radians)` (V4)
+Converts radians to degrees. If `radians` omitted, returns chainable function.
+- `utils.radToDeg(radians)`: Returns `Number`.
+- `utils.radToDeg()`: Returns chainable `Function(radians) => Number`.
+- Code Example: `utils.radToDeg(Math.PI); // 180`
+
+### Chain-able Utility Functions (V4)
+Combine multiple utility functions (round, clamp, snap, wrap, mapRange, interpolate, pad*, deg/rad conversions) into a single expression by calling them without their initial `value` argument.
+- Usage: `const complexModifier = utils.clamp(0, 100).round(2).padStart(6, '0');`
+  `complexModifier(125.678); // Clamps to 100, rounds to 100.00, pads to "100.00" (length check logic varies for float string pad)`
+  (Actual output for `125.678` would be `"100.00"`, then padded if it's shorter than 6 chars. If `padStart` expects int-like strings, it might be `"000100"` if it rounds first then pads).
+  More realistically: `utils.mapRange(0,255,0,1).round(2); // creates a function that normalizes then rounds to 2 decimals`
+- Code Example:
+  ```javascript
+  animate('.value-display', {
+    innerHTML: 1000, // This is animated
+    modifier: utils.wrap(0, 100).roundPad(2).padStart(6, '0'), // Wrap value 0-100, then round & pad
+    duration: 10000, loop: true, ease: 'linear'
+  });
+  ```
+  HTML: `<span class="value-display">0</span>`
+
+---
+## Web Animation API (WAAPI) (V4)
+Lightweight alternative (3KB vs 10KB JS version) to `animate()` method, using browser's native Web Animation `Element.animate()` API.
+WAAPI powered animations created using `waapi.animate()`.
+`import { waapi } from 'animejs'; const animation = waapi.animate(targets, parameters);`
+
+### Example: WAAPI Animation
+```javascript
+import { waapi, stagger } from 'animejs';
+waapi.animate('h2.waapi-hello span', { // Assuming HTML: <h2 class="waapi-hello"><span>H</span>...</h2>
+  translate: '0 -2rem', // Animates Y transform
+  delay: stagger(100),
+  duration: 600,
+  loop: true,
+  alternate: true,
+  ease: 'inOut(2)',
+});
+```
+HTML: `<h2 class="waapi-hello"><span>H</span><span>E</span><span>L</span><span>L</span><span>O</span></h2>`
+
+### When to Use WAAPI
+- **Prioritize `waapi.animate()` when:**
+  - Animating during high CPU/network load (benefits from hardware acceleration).
+  - Initial page load time is critical (3KB gzipped vs 10KB for JS version).
+  - Animating complex CSS values not well handled by JS version (e.g., CSS transform matrices, CSS `color()` functions).
+- **Use JS `animate()` when:**
+  - Animating a very large number of targets (> ~500).
+  - Animating JS objects, Canvas, WebGL, WebGPU.
+  - Animating SVG attributes, DOM attributes, or CSS properties not supported by native WAAPI.
+  - Needing complex timelines and keyframe structures (JS version has more features here).
+  - Requiring more advanced control methods or callback functions.
+
+### Hardware-Accelerated Animations
+WAAPI can run animations off main browser thread (smoother, less power).
+- **Hardware-accelerated properties (most browsers):** `opacity`, `transform` (and its components like `translate`, `scale`, `rotate`).
+- **Hardware-accelerated (some browsers):** `clip-path`, `filter`.
+- **Safari Note:** Custom `linear()` easings (which Anime.js uses to implement power eases like `'out(3)'` or any JS function easing passed to `waapi.animate()`) can prevent hardware acceleration in Safari, even if property supports it. Stick to CSS keyword easings or `cubic-bezier` strings for max Safari compatibility if HW acceleration is critical.
+
+### Improvements to the Web Animation API
+`waapi.animate()` adds quality-of-life improvements over native WAAPI.
+- Can be linked with `ScrollObserver`: `waapi.animate('.sq', { translate: '100px', autoplay: onScroll() });`
+- Can be used within a `Scope`: `createScope().add(() => waapi.animate(...));`
+
+#### Sensible defaults
+Native WAAPI requires duration, doesn't auto-apply easing, and doesn't persist final value. Anime.js `waapi.animate()` ensures final state persists and uses same defaults as JS `animate()` (e.g., `duration:1000`, `ease:'out(2)'`).
+- Anime.js: `waapi.animate('.circle', { translate: '100px' });` (Simple, works as expected).
+- Native WAAPI: Requires more boilerplate for same result (`duration`, `easing`, `fill:'forwards'`, manual style set on `finished`).
+
+#### Multi-targets animation
+Targets multiple DOM Elements via CSS selector. Supports `stagger()`.
+- Anime.js: `waapi.animate('.circle', { translate: '100px', delay: stagger(100) });`
+
+#### Default units
+If no unit specified for properties expecting one (e.g. `width`), default units applied for common properties.
+- Properties with auto-units: `x,y,z,translateX/Y/Z` (`px`), `rotate/X/Y/Z` (`deg`), `skew/X/Y` (`deg`), `perspective` (`px`), `width,height,margin,padding,top,right,bottom,left,borderWidth,fontSize,borderRadius` (`px`).
+- Anime.js: `waapi.animate('.square', { x: 250, rotate: 45 }); // x becomes 250px, rotate becomes 45deg`
+
+#### Function based values
+Supports function-based values, allowing different values per target.
+- Anime.js: `waapi.animate('.square', { translate: () => \`\${utils.random(10,17)}rem\`, scale: (_,i) => .25 + (i*.25) });`
+
+#### Individual CSS transforms
+CSS `transform` property can be animated by specifying individual properties (e.g., `x`, `rotateY`, `scaleZ`).
+- Requires browser support for `CSS.registerProperty()`. Falls back to no animation if not supported.
+- Individual transforms cannot be hardware-accelerated.
+- Anime.js: `waapi.animate('.square', { x: '10rem', rotateX: 90, scaleY: 1.5 });`
+
+#### Individual property parameters
+Each property can have specific `delay`, `duration`, `ease` by passing an Object with `to` or `from`.
+- Anime.js: `waapi.animate('.square', { y: { to:[0,-30,0], ease:'out(4)' }, rotate: { from:-180, to:0, duration:800 } });`
+
+#### Spring and custom easings
+Use any Anime.js spring (`createSpring()`) or custom JavaScript easing functions (from `eases` object or user-defined).
+- Anime.js: `waapi.animate('.circle', { y: [0,-30,0], ease: createSpring({ stiffness:150, damping:5 }) });`
+
+### API Differences with Native WAAPI
+Key differences between native `Element.animate()` and Anime.js `waapi.animate()`.
+
+#### iterations
+Native `iterations` is replaced by Anime.js `loop`. `loop` defines how many times animation *repeats*.
+- `iterations: 1` (native)  -> `loop: 0` (Anime.js) (plays once)
+- `iterations: 4` (native)  -> `loop: 3` (Anime.js) (plays once, repeats 3 times)
+- `iterations: Infinity` (native) -> `loop: true` or `Infinity` or `-1` (Anime.js)
+
+#### direction
+Native `direction` is replaced by Anime.js `reversed` (Boolean) and `alternate` (Boolean).
+- `direction: 'forward'` (native) -> `reversed: false, alternate: false` (Anime.js)
+- `direction: 'reverse'` (native) -> `reversed: true, alternate: false`
+- `direction: 'alternate'` (native) -> `reversed: false, alternate: true`
+- `direction: 'alternate-reverse'` (native) -> `reversed: true, alternate: true`
+
+#### easing
+Native `easing` is replaced by Anime.js `ease`. Default is `'out(2)'` instead of `'linear'`. `ease` accepts Anime.js easing strings and functions.
+
+#### animation.finished
+Native `animation.finished` (Promise) is replaced by Anime.js `animation.then()` method, which also returns a Promise.
+- Anime.js: `waapi.animate(target, params).then(callbackReturningAnimationInstance);`
+
+### `waapi.convertEase(jsEasingFunction)`
+Converts any JavaScript easing function (like Anime.js custom eases or springs) into a WAAPI-compatible `linear()` easing string. Useful if you need to use these easings with native `Element.animate()` directly.
+- Parameters: **jsEasingFunction** `Function` (e.g., `eases.outExpo`, `createSpring().ease`).
+- Returns: `String` representing the `linear(...)` easing.
+- Code Example:
+  ```javascript
+  import { waapi, createSpring, eases } from 'animejs';
+  const springEase = createSpring({ stiffness: 120, damping: 10 }).ease;
+  const waapiLinearSpringEase = waapi.convertEase(springEase);
+  // Now waapiLinearSpringEase can be used in native Element.animate():
+  // document.querySelector('.el').animate({ transform: 'translateX(100px)' }, { duration: 1000, easing: waapiLinearSpringEase });
+  ```
+
+---
+## Engine (V4)
+Drives and synchronises all Animation, Timer, and Timeline instances. Accessed via `engine` import.
+`import { engine } from 'animejs';`
+
+### Engine Parameters
+Global settings for Anime.js behavior.
+`engine.speed = 0.5; engine.fps = 60;`
+
+#### timeUnit
+Configures unit for time-related values (`duration`, `delay`). Default duration automatically adjusts.
+- Accepts: `'s'` (seconds), `'ms'` (milliseconds).
+- Default: `'ms'`.
+- Code Example: `engine.timeUnit = 's'; // All new durations/delays interpreted as seconds.`
+
+#### speed
+Global playback rate for all animations. `>1` speeds up, `0-1` slows down.
+- Accepts: `Number` (>= 0).
+- Default: `1`.
+
+#### fps
+Global frame rate (updates/renders per second) for JS-based animations/timers.
+- Accepts: `Number` (> 0). Capped by browser/monitor.
+- Default: `120`.
+
+#### precision
+Decimal places for rounding string values (CSS props, SVG/DOM attrs) during JS animation. `0`=no decimals, `-1`=skip rounding. Affects smoothness/performance.
+- Accepts: `Number` (>= -1).
+- Default: `4`.
+
+#### pauseOnDocumentHidden
+Controls if engine pauses JS animations when browser tab is hidden. If `false`, animations adjust `currentTime` to "catch up" as if they never paused.
+- Accepts: `Boolean`.
+- Default: `true`.
+
+### Engine Methods
+`engine.pause(); engine.resume();`
+
+#### update()
+Manually ticks engine. Use if `engine.useDefaultMainLoop` is set to `false` (e.g., for integration with an external render loop like Three.js or a game engine).
+- Returns: `Engine` (self).
+- Code Example:
+  ```javascript
+  engine.useDefaultMainLoop = false;
+  function myRenderLoop() {
+    engine.update(); // Manually drive Anime.js
+    // ... other rendering logic ...
+    requestAnimationFrame(myRenderLoop);
+  }
+  myRenderLoop();
+  ```
+
+#### pause()
+Pauses engine's main loop, affecting all active JS-based Timer, Animation, Timeline instances.
+- Returns: `Engine` (self).
+
+#### resume()
+Resumes engine after being paused by `engine.pause()`.
+- Returns: `Engine` (self).
+
+### Engine Properties
+`console.log(engine.currentTime);`
+- **timeUnit** `String`: Get/set time unit (`'ms'` | `'s'`).
+- **currentTime** `Number`: Get current time of the engine (ms, regardless of `timeUnit` setting).
+- **deltaTime** `Number`: Get time elapsed (ms) since last engine frame.
+- **precision** `Number`: Get/set string value rounding precision.
+- **speed** `Number`: Get/set global playback rate.
+- **fps** `Number`: Get/set global frame rate.
+- **useDefaultMainLoop** `Boolean`: Get/set whether engine uses its default `requestAnimationFrame` loop.
+- **pauseOnDocumentHidden** `Boolean`: Get/set whether engine pauses when tab is hidden.
+
+### Engine Defaults
+Global default properties for all new Timer, Animation, and Timeline instances. Accessed via `engine.defaults`.
+`engine.defaults.duration = 500; engine.defaults.ease = 'inOutSine';`
+- Properties include: `playbackEase`, `playbackRate`, `frameRate`, `loop`, `reversed`, `alternate`, `autoplay`, `duration`, `delay`, `composition`, `ease`, `loopDelay`, `modifier`, `onBegin`, `onUpdate`, `onRender`, `onLoop`, `onComplete`, `onPause`.
+  (Refer to Timer/Animation sections for accepted values of each default property).
+```
