@@ -1,0 +1,376 @@
+```txt
+FRAMEWORK: Animotion
+DESCRIPTION: Presentational framework for creating beautiful slides. Visualizes ideas with code.
+TECHNOLOGIES: Svelte, Reveal.js, Tailwind CSS
+VERSION: 2
+
+SECTION: Key Changes in Animotion 2
+- FEATURE: @animotion/core Standalone Package
+  - DETAIL: Enables easier updates and integration into existing Svelte projects.
+- FEATURE: View Transitions API
+  - DETAIL: Used for layout animations.
+  - WARNING: Not supported in Firefox.
+- FEATURE: Slide Events as Props
+  - DETAIL: `on:in` and `on:out` events are now `in` and `out` props.
+- FEATURE: Svelte 5 Integration
+  - DETAIL: Utilizes Svelte 5 signals (`$state`, `$derived`) for reactivity. `tween` from `@animotion/motion` no longer requires `$` prefix.
+- FEATURE: SvelteKit Template
+  - DETAIL: Allows endpoints and `<iframe>` embedding without a separate server.
+- FEATURE: Tailwind 4
+  - DETAIL: Improved developer experience, more CSS-native feel.
+
+SECTION: Animotion Core (@animotion/core)
+PACKAGE_NAME: @animotion/core
+PURPOSE: Core functionality of Animotion.
+COMPONENTS:
+  - COMPONENT_NAME: <Presentation>
+    - USAGE: Main wrapper for all slides.
+    - PROP: options (object) - Configures presentation (e.g., `transition: 'slide'`, `controls: true`).
+      EXAMPLE: `<Presentation options={{ transition: 'fade' }}>...</Presentation>`
+  - COMPONENT_NAME: <Slide>
+    - USAGE: Defines a single slide. Uses CSS grid by default.
+    - PROPS:
+      - `in (function)`: Callback executed when slide enters viewport.
+      - `out (function)`: Callback executed when slide exits viewport.
+      - `class (string)`: Standard HTML class attribute for styling.
+    - EXAMPLE_BASIC_USAGE:
+      ```svelte
+      <script>
+        import { Presentation, Slide } from '@animotion/core';
+      </script>
+      <Presentation>
+        <Slide><p>Hello</p></Slide>
+        <Slide in={() => console.log('Slide 2 In')} out={() => console.log('Slide 2 Out')}>
+          <p>Slide 2</p>
+        </Slide>
+      </Presentation>
+      ```
+  - COMPONENT_NAME: <Transition> (Covered in detail under "Transitions" section)
+  - COMPONENT_NAME: <Action> (Covered in detail under "Actions" section)
+  - COMPONENT_NAME: <Code> (Covered in detail under "Code" section)
+  - COMPONENT_NAME: <Slides>
+    - USAGE: Used for file-based slides setup.
+    - PROP: `center (boolean)`: Centers slides.
+    - EXAMPLE_FILE_BASED_SETUP:
+      ```svelte
+      // src/routes/+page.svelte
+      <script>
+        import { Presentation, Slides } from '@animotion/core';
+      </script>
+      <Presentation options={{ history: true }}>
+        <Slides center={true} />
+      </Presentation>
+      // Slides are then created in src/slides/NNN/slide.svelte
+      ```
+
+SECTION: Svelte 5 Reactivity
+CONCEPT: Signals for reactivity.
+  - `$state`: Creates a reactive state variable.
+  - `$derived`: Creates a computed value based on other signals.
+  EXAMPLE_SIGNALS:
+    ```svelte
+    <script>
+      let count = $state(0);
+      let doubled = $derived(count * 2);
+    </script>
+    <p>Count: {count}, Doubled: {doubled}</p>
+    ```
+CONCEPT: `tween` from `@animotion/motion` is no longer a Svelte store.
+  EXAMPLE_TWEEN:
+    ```svelte
+    <script>
+      import { tween } from '@animotion/motion';
+      let pos = tween({ x: 0 }); // No $ prefix
+    </script>
+    <div style="transform: translateX({pos.x}px)">Animated</div>
+    ```
+
+SECTION: Slides
+SUB_SECTION: Creating Slides
+  - DETAIL: Use `<Slide>` component within `<Presentation>`.
+  - EXAMPLE:
+    ```svelte
+    <Presentation>
+      <Slide class="h-full place-content-center"><p>Title Slide</p></Slide>
+      <Slide><img src="/image.png" alt="Demo" /></Slide>
+    </Presentation>
+    ```
+SUB_SECTION: Slide Events (as Props)
+  - PROPS: `in`, `out` (functions).
+  - EXAMPLE: (See `<Slide>` component example under "Animotion Core")
+
+SUB_SECTION: Reusable Svelte Components
+  - CONCEPT: Create custom Svelte components (e.g., in `src/lib`) and import into slides.
+  - EXAMPLE_CUSTOM_COMPONENT_USAGE:
+    ```svelte
+    // src/lib/MyComponent.svelte
+    <p>My re-usable component</p>
+    ```
+    ```svelte
+    // Slide using MyComponent
+    <script>
+      import MyComponent from '$lib/MyComponent.svelte';
+    </script>
+    <Slide><MyComponent /></Slide>
+    ```
+
+SUB_SECTION: File-based Slides
+  - CONCEPT: Organize slides into separate files (e.g., `src/slides/100/slide.svelte`, `src/slides/200/slide.svelte`).
+  - SORTING: Slides are sorted numerically by folder name.
+  - ASSETS: Allows co-locating slide-specific assets.
+  - DEFAULT_STRUCTURE_EXAMPLE:
+    ```
+    <!-- slides/100/slide.svelte -->
+    <p>First slide content.</p>
+    ```
+    ```
+    <!-- slides/200/slide.svelte -->
+    <img src="./image-for-slide-200.png" />
+    ```
+  - PASSING_PROPS_TO_FILE_SLIDES: Use `<script module>` and `defineProps`.
+    EXAMPLE_PROPS_FILE_SLIDE:
+      ```svelte
+      <!-- slides/100/slide.svelte -->
+      <script module>
+        import { defineProps } from '@animotion/core';
+        export const props = defineProps({
+          in: () => console.log('Slide 100 In'),
+        });
+      </script>
+      <script>
+        // Regular script for component logic
+      </script>
+      <p>Content for slide 100.</p>
+      ```
+  - SETUP: Can be chosen during project setup or configured manually using `<Slides>` component (see example under `<Slides>` component).
+
+SECTION: Transitions (using View Transitions API)
+WARNING: View Transitions API is not supported in Firefox.
+COMPONENT: <Transition>
+  - PURPOSE: Animates DOM changes. Wraps content in a `<div>` with a unique `view-transition-name`.
+  - PROPS:
+    - `visible (boolean)`: If true, element is visible and transitions on initial mount or when its #if block becomes true.
+    - `do (function)`: A function that causes a DOM change. Animotion runs this function then triggers `document.startViewTransition()`.
+    - `class (string)`: CSS classes for the wrapper `<div>`.
+    - `hidden (boolean)`: If true, the wrapper `<div>` does not affect layout (`display: contents` or similar effect).
+    - `entry (string)`: Name of a custom `@keyframes` animation for entry.
+    - `exit (string)`: Name of a custom `@keyframes` animation for exit.
+    - `duration (number)`: Animation duration in seconds.
+    - `delay (number)`: Animation delay in seconds.
+    - `order (number)`: Defines the sequence of transitions when multiple elements change.
+    - `transitions (array<function>)`: An array of functions, each causing a DOM change, to be executed sequentially with transitions.
+  - USAGE_EXAMPLE_BASIC:
+    ```svelte
+    <Transition visible><p>Hello</p></Transition>
+    ```
+  - USAGE_EXAMPLE_WITH_DO:
+    ```svelte
+    <script> let showMore = $state(false); </script>
+    <Transition do={() => showMore = true}><button>Show</button></Transition>
+    {#if showMore}
+      <Transition visible><p>Details revealed!</p></Transition>
+    {/if}
+    ```
+  - USAGE_EXAMPLE_TRIGGER_ONLY:
+    ```svelte
+    <Transition do={() => { /* some DOM update logic */ }} />
+    ```
+  - CUSTOM_ANIMATIONS: Define `@keyframes` in `app.css`.
+    EXAMPLE_CSS_KEYFRAMES:
+      ```css
+      @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+      ```
+    EXAMPLE_SVELTE_CUSTOM:
+      ```svelte
+      <Transition entry="fadeIn" duration={0.5} visible>Content</Transition>
+      ```
+  - LAYOUT_ANIMATIONS: Animotion handles animations between layout changes (e.g., flex to grid) if DOM changes within a transition context.
+    EXAMPLE_LAYOUT_ANIMATION:
+      ```svelte
+      <script>
+        let layout = $state('flex');
+        let items = $state(['A', 'B']);
+      </script>
+      <div class={layout}>
+        {#each items as item (item)}
+          <Transition class="box" visible>{item}</Transition>
+        {/each}
+      </div>
+      <Transition transitions={[
+        () => layout = 'grid grid-cols-2',
+        () => items = ['B', 'A']
+      ]} />
+      ```
+
+SECTION: Actions
+COMPONENT: <Action>
+  - PURPOSE: Allows stepping through parts of a slide, executing code at each step.
+  - PROPS:
+    - `do (function)`: Code to run when this action step is triggered.
+    - `undo (function, optional)`: Code to run when navigating backward past this step.
+    - `actions (array<function>, optional)`: Array of functions for multiple sequential actions from one component.
+  - USAGE_EXAMPLE:
+    ```svelte
+    <script>
+      import { Code, Action } from '@animotion/core';
+      let codeRef;
+      let textVisible = $state(false);
+    </script>
+    <Code bind:this={codeRef} code="let x = 1;" />
+    {#if textVisible} <p>Text is now visible!</p> {/if}
+
+    <Action do={() => codeRef.selectLines`1`} />
+    <Action do={() => textVisible = true} undo={() => textVisible = false} />
+    <Action actions={[() => console.log('Step A'), () => console.log('Step B')]} />
+    ```
+
+SECTION: Code Component (<Code>)
+POWERED_BY: Shiki (syntax highlighting), Shiki Magic Move (code change animations).
+COMPONENT: <Code>
+  - PROPS:
+    - `bind:this` or `ref`: To get the component instance for programmatic control.
+    - `lang (string)`: Language for syntax highlighting (e.g., 'javascript', 'svelte').
+    - `theme (string)`: Shiki theme name (e.g., 'poimandres', 'github-dark').
+    - `code (string)`: The initial code to display.
+    - `options (object, optional)`: Shiki/Magic Move options. E.g., `{ duration: 500, stagger: 0.1, lineNumbers: true }`.
+    - `autoIndent (boolean, default: true)`: Automatically unindents code based on first line's leading tabs.
+    - `codes (array<string>, optional)`: An array of code strings. Creates implicit actions to step through each code version.
+  - INSTANCE_METHODS (accessible via `bind:this` or `ref`):
+    - `update\`new_code_string\`: Animates changes from current code to `new_code_string`.
+      - Can use template literal expressions: `codeRef.update\`let val = ${newValue};\``
+    - `selectLines\`specifier\`: Highlights lines. Specifier: '2', '2,3', '2-5', '2-5,8', '*'. Returns Promise.
+    - `selectToken\`specifier\`: Highlights tokens. Specifier: 'tokenName', 'lineNumber tokenName', 'token1 {token2}'. Returns Promise.
+  - ESCAPING_TAGS: Use `\` to escape closing tags in code strings (e.g., `<\/script>`).
+  - USAGE_EXAMPLE:
+    ```svelte
+    <script lang="ts">
+      import { Presentation, Slide, Code, Action } from '@animotion/core';
+      let codeComponent: ReturnType<typeof Code>;
+      let currentCode = `// Version 1\nconsole.log('Hello');`;
+    </script>
+    <Presentation><Slide>
+      <Code bind:this={codeComponent} lang="javascript" theme="poimandres" code={currentCode} />
+      <Action do={() => codeComponent.update`// Version 2\nconsole.warn('Updated!');`} />
+      <Action do={async () => {
+        await codeComponent.selectLines`2`;
+        await codeComponent.selectToken`console`;
+      }} />
+    </Slide></Presentation>
+    ```
+  - USAGE_EXAMPLE_CODES_PROP:
+    ```svelte
+    <Code
+      lang="js"
+      codes={[
+        `let a = 1; // First step`,
+        `let a = 2; // Second step`
+      ]}
+    />
+    ```
+
+SECTION: Motion (@animotion/motion)
+MODULE_PATH: @animotion/motion
+PURPOSE: Procedural animations for non-CSS properties (SVG, Canvas, JS values).
+FUNCTION: `tween(initialValue, defaultOptions?)`
+  - `initialValue (any)`: The starting value or object.
+  - `defaultOptions (object, optional)`: `{ duration, delay, easing }`.
+  - RETURNS: A tweenable object.
+TWEENABLE_OBJECT_METHODS:
+  - `to(targetValue, options?)`: Animates to `targetValue`. Returns Promise. `options` override defaults.
+  - `sfx(soundPath)`: Chains a sound effect to play before the next `.to()` animation. Sounds from `/static` folder.
+  - `reset()`: Resets tween to its initial state.
+TWEENABLE_OBJECT_PROPERTIES (for accessing values):
+  - `value.current` (for single tweened values)
+  - `object.propertyName` or `object.current.propertyName` (for tweened objects)
+HELPER_FUNCTION: `all(...animations)`
+  - PURPOSE: Plays multiple `tween.to()` animations concurrently. Returns a single Promise.
+USAGE_EXAMPLE_SINGLE_VALUE:
+  ```svelte
+  <script>
+    import { tween } from '@animotion/motion';
+    import { Slide, Action } from '@animotion/core'; // Assuming Presentation wrapper
+    let radius = tween(10);
+    async function grow() { await radius.to(50, { duration: 1000 }); }
+  </script>
+  <Slide>
+    <svg><circle cx="50" cy="50" r={radius.current} fill="blue" /></svg>
+    <Action do={grow} />
+  </Slide>
+  ```
+USAGE_EXAMPLE_OBJECT_AND_ALL:
+  ```svelte
+  <script>
+    import { tween, all } from '@animotion/motion';
+    let obj = tween({ x: 0, opacity: 1 });
+    let scale = tween(1);
+    async function animateAll() {
+      await all(
+        obj.to({ x: 100, opacity: 0.5 }),
+        scale.to(1.5)
+      );
+    }
+  </script>
+  <div style="transform: translateX({obj.x}px) scale({scale.current}); opacity: {obj.opacity}">Box</div>
+  <Action do={animateAll} />
+  ```
+USAGE_EXAMPLE_SFX_AND_RESET:
+  ```svelte
+  <script>
+    // ... imports
+    let pos = tween({ x:0 });
+    async function moveWithSound() {
+      await pos.sfx('/sounds/whoosh.mp3').to({ x: 200 });
+    }
+  </script>
+  <Slide in={moveWithSound} out={() => pos.reset()}>
+    <div style="transform: translateX({pos.x}px)">Sound Box</div>
+  </Slide>
+  ```
+
+SECTION: Styling
+SUB_SECTION: Tailwind CSS
+  - DETAIL: Use Tailwind utility classes for styling. Supports arbitrary values (e.g., `h-[237px]`).
+  - RECOMMENDATION: Tailwind CSS IntelliSense VS Code extension. Classes are auto-sorted by Prettier plugin.
+  - EXAMPLE:
+    ```svelte
+    <div class="flex items-center justify-center p-4 bg-blue-500 text-white rounded-lg">
+      Styled with Tailwind
+    </div>
+    ```
+SUB_SECTION: Regular CSS
+  - DETAIL: Use `<style>` tags within Svelte components for scoped CSS.
+  - EXAMPLE:
+    ```svelte
+    <div class="custom-box">Styled with CSS</div>
+    <style>
+      .custom-box {
+        background-color: #f0f0f0;
+        padding: 1em;
+        border: 1px solid #ccc;
+      }
+    </style>
+    ```
+
+SECTION: Programmatic Slide Control
+FUNCTION: `getPresentation()`
+  - MODULE: `@animotion/core`
+  - PURPOSE: Returns the Reveal.js instance, allowing direct API interaction.
+  - NOTE: Call after the presentation has been mounted.
+  - USAGE_EXAMPLE:
+    ```svelte
+    <script>
+      import { getPresentation } from '@animotion/core';
+      import { onMount } from 'svelte';
+
+      let presentation;
+      onMount(() => {
+        presentation = getPresentation();
+      });
+
+      function nextSlide() { presentation?.slides.next(); }
+      function prevSlide() { presentation?.slides.prev(); }
+    </script>
+    <button on:click={prevSlide}>Previous</button>
+    <button on:click={nextSlide}>Next</button>
+    ```
+```
