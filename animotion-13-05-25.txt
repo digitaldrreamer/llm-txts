@@ -370,7 +370,7 @@ FUNCTION: `getPresentation()`
       function nextSlide() { presentation?.slides.next(); }
       function prevSlide() { presentation?.slides.prev(); }
     </script>
-    <button on:click={prevSlide}>Previous</button>
-    <button on:click={nextSlide}>Next</button>
+    <button onclick={prevSlide}>Previous</button>
+    <button onclick={nextSlide}>Next</button>
     ```
 ```
